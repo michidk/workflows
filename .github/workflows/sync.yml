@@ -1,0 +1,27 @@
+name: Sync workflows
+
+on:
+  schedule:
+    - cron: "0 8 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orcastrate-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync managed workflows
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Run Orcastrate
+        uses: michidk/orcastrate@2edd9f720024ada79251716e454ff23e860f0ecc # main
+        with:
+          orcastrate-token: ${{ secrets.ORCASTRATE_TOKEN }}
+          github-token: ${{ secrets.ORCASTRATE_TOKEN }}

@@ -1,0 +1,10 @@
+[orchestrator]
+templates_dir = "templates"
+branch_prefix = "orcastrate/sync"
+pr_label = "orcastrate"
+
+[[repos]]
+name = "michidk/redguard-preservation"
+
+[[repos]]
+name = "michidk/vscli"

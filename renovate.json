@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "github-actions": {
+    "managerFilePatterns": ["/\\.github/workflows/[^/]+\\.ya?ml$/", "/^templates/.*\\.yml$/"]
+  },
+  "customManagers": [{
+    "customType": "regex",
+    "managerFilePatterns": ["/\\.github/workflows/.*\\.yml$/"],
+    "matchStrings": ["github.com/rhysd/actionlint/cmd/actionlint@(?<currentValue>v[0-9.]+)"],
+    "depNameTemplate": "rhysd/actionlint",
+    "datasourceTemplate": "github-releases"
+  }, {
+    "customType": "regex",
+    "managerFilePatterns": ["/\\.github/workflows/.*\\.yml$/"],
+    "matchStrings": ["ref: (?<currentDigest>[a-f0-9]{40}) # renovate: datasource=(?<datasource>git-refs) depName=(?<depName>\\S+) currentValue=(?<currentValue>\\S+)"],
+    "versioningTemplate": "git"
+  }]
+}

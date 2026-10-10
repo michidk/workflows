@@ -1,0 +1,5 @@
+# @orcastrate
+# template: rust-ci
+# params:
+#   coverage: true
+# @end-orcastrate
