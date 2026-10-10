@@ -1,0 +1,45 @@
+name: Validate workflows
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate and lint rendered workflows
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Checkout Orcastrate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: michidk/orcastrate
+          ref: 2edd9f720024ada79251716e454ff23e860f0ecc # renovate: datasource=git-refs depName=https://github.com/michidk/orcastrate currentValue=main
+          path: orcastrate-source
+
+      - name: Build pinned Orcastrate
+        run: docker build -t orcastrate-validate orcastrate-source
+
+      - name: Validate and render templates
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/workspace" -w /workspace orcastrate-validate validate
+          mkdir -p rendered
+          for fixture in fixtures/*.yml; do
+            docker run --rm -v "$GITHUB_WORKSPACE:/workspace" -w /workspace \
+              orcastrate-validate render "$fixture" > "rendered/$(basename "$fixture")"
+          done
+
+      - name: Run actionlint
+        run: >-
+          go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          -ignore 'label "ubuntu-26\.04" is unknown'
+          .github/workflows/*.yml rendered/*.yml
+
+      - name: Test publication guards
+        run: bash tests/publish.sh rendered/publish-cratesio.yml

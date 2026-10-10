@@ -1,19 +1,113 @@
 # Workflows
 
-Reusable GitHub Actions workflows for michidk repositories.
+This repository is the central [Orcastrate](https://github.com/michidk/orcastrate)
+template repository for GitHub Actions workflows used by michidk repositories.
 
-## Publish a Rust crate
+## How updates reach repositories
 
-Call `.github/workflows/publish-rust-crate.yml` from a release workflow:
+1. Change a template in `templates/` and merge the change into `main`.
+2. The scheduled sync runs each weekday at 08:00 UTC. You can also run it
+   manually from GitHub Actions.
+3. Orcastrate renders each managed workflow and opens or updates a pull request
+   when the target repository differs from the template.
+4. Merge the generated pull request to apply the workflow change.
+
+Template changes do not modify target repositories directly.
+
+## Repository layout
+
+- `orchestrator.toml` lists the managed repositories.
+- `templates/` contains the canonical Tera workflow templates.
+- `.github/workflows/sync.yml` runs Orcastrate.
+- `.github/workflows/actionlint.yml` validates this repository.
+
+## Onboard a repository
+
+1. Open your [fine-grained personal access tokens](https://github.com/settings/personal-access-tokens)
+   and edit the token stored as `ORCASTRATE_TOKEN`.
+2. Add the new repository under **Repository access**. Keep these repository
+   permissions set to read and write: **Contents**, **Pull requests**, and
+   **Workflows**.
+3. Add the repository to `orchestrator.toml`:
+
+   ```toml
+   [[repos]]
+   name = "michidk/example"
+   ```
+
+4. Add the initial managed workflow under `.github/workflows/` in the target
+   repository. Copy an existing workflow that uses the required template and
+   keep its Orcastrate frontmatter:
+
+   ```yaml
+   # @orcastrate
+   # template: publish-rust-crate
+   # @end-orcastrate
+
+   # The rendered workflow starts here and must be valid GitHub Actions YAML.
+   ```
+
+5. Merge the initial workflow into the target repository's default branch.
+   Orcastrate discovers existing workflow files but does not create the first
+   file.
+6. Run **Sync workflows** manually in this repository. Orcastrate opens a pull
+   request if the initial workflow differs from its template.
+
+Orcastrate preserves the frontmatter and manages the complete file below it.
+To change template parameters, edit the `params` map in the frontmatter.
+
+GitHub expressions in templates must escape Tera expressions. For example:
 
 ```yaml
-jobs:
-  publish-cratesio:
-    uses: michidk/workflows/.github/workflows/publish-rust-crate.yml@main
-    secrets:
-      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+TAG_NAME: ${{ "{{ github.ref_name }}" }}
 ```
 
-The calling repository must have a `publish-crates.io` environment containing
-the `CARGO_REGISTRY_TOKEN` secret. The workflow accepts `vX.Y.Z` tags and runs
-`cargo publish` for the tagged commit.
+## Authentication
+
+Add an `ORCASTRATE_TOKEN` repository secret. The token needs read and write
+access to Contents, Pull requests, and Workflows in every managed repository.
+The sync passes this token to Orcastrate for both workflow commits and pull
+requests.
+
+## Rust crate publishing
+
+The `publish-rust-crate` template validates `vX.Y.Z` tags, checks that the root
+Cargo package has the same version, and publishes through crates.io Trusted
+Publishing.
+
+Configure these GitHub trusted publishers in the crates.io settings:
+
+| Crate | Repository | Workflow | Environment |
+|---|---|---|---|
+| `redguard-preservation` | `michidk/redguard-preservation` | `publish-cratesio.yml` | `publish-crates.io` |
+| `vscli` | `michidk/vscli` | `publish-cratesio.yml` | `publish-crates.io` |
+
+The target repositories do not need a crates.io API token.
+
+To test Trusted Publishing, run **Publish to crates.io** manually and leave
+**auth-only** enabled. This obtains and revokes a temporary token without
+uploading a crate. Release events always perform normal publication. Rerunning
+a release skips versions already present on crates.io.
+
+## Validate changes and update dependencies
+
+CI builds Orcastrate from a pinned source commit, renders the managed workflow
+fixtures in `fixtures/`, and runs actionlint on the rendered files and this
+repository's workflows. Add a fixture for each template and parameter combination
+that needs coverage.
+
+`renovate.json` enables dependency update PRs for workflows and templates,
+including pinned GitHub Actions and actionlint. Install the
+[Renovate GitHub App](https://github.com/apps/renovate) on this repository to
+activate it. Review and merge the generated PRs before synchronizing consumers.
+
+To onboard another crate:
+
+1. Create a `publish-crates.io` environment in the target GitHub repository.
+2. Add a GitHub trusted publisher in the crate's crates.io settings. Enter the
+   repository owner, repository name, exact managed workflow filename, and the
+   `publish-crates.io` environment.
+3. Add `.github/workflows/publish-cratesio.yml` to the target repository with
+   `template: publish-rust-crate` frontmatter and the rendered workflow body.
+4. Add the repository to the Orcastrate token scope and `orchestrator.toml` as
+   described above.
