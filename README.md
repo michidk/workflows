@@ -1,7 +1,8 @@
 # Workflows
 
 This repository is the central [Orcastrate](https://github.com/michidk/orcastrate)
-template repository for GitHub Actions workflows used by michidk repositories.
+template repository for GitHub Actions workflows and Renovate configuration
+used by michidk repositories.
 
 ## How updates reach repositories
 
@@ -17,7 +18,7 @@ Template changes do not modify target repositories directly.
 ## Repository layout
 
 - `orchestrator.toml` lists the managed repositories.
-- `templates/` contains the canonical Tera workflow templates.
+- `templates/` contains the canonical Tera workflow templates and Renovate preset.
 - `.github/workflows/sync.yml` runs Orcastrate.
 - `.github/workflows/actionlint.yml` validates this repository.
 
@@ -68,6 +69,22 @@ Add an `ORCASTRATE_TOKEN` repository secret. The token needs read and write
 access to Contents, Pull requests, and Workflows in every managed repository.
 The sync passes this token to Orcastrate for both workflow commits and pull
 requests.
+
+## Renovate
+
+Add this `renovate.json` to a repository to use the shared preset:
+
+```json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>michidk/workflows//templates/renovate"]
+}
+```
+
+Renovate reads `templates/renovate.json` from this repository's default branch
+on each run. Changes to the preset apply without a sync PR. Orcastrate continues
+to manage the GitHub Actions workflows. Configure repository-specific settings
+alongside `extends` and enable the Renovate GitHub App for the repository.
 
 ## Rust CI
 
