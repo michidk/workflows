@@ -94,10 +94,6 @@ CI renders and lints fixtures for the defaults and both consumer configurations.
 
 ## Rust crate publishing
 
-The legacy reusable workflow at `.github/workflows/publish-rust-crate.yml`
-remains available while Redguard and vscli migrate. Remove it only after both
-repositories stop calling it on `main`. New repositories should use the template.
-
 The `publish-rust-crate` template validates `vX.Y.Z` tags, checks that the root
 Cargo package has the same version, and publishes through crates.io Trusted
 Publishing.
