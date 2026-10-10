@@ -1,0 +1,13 @@
+# @orcastrate
+# template: rust-release
+# params:
+#   bin_name: bitmap2ttf
+#   manifest_paths: [bitmap2ttf/Cargo.toml, bitmap2ttf-cli/Cargo.toml]
+#   publish_release: true
+#   targets:
+#     - {os: ubuntu-26.04, target: x86_64-unknown-linux-gnu}
+#     - {os: ubuntu-26.04, target: arm-unknown-linux-gnueabihf, cross: true}
+#     - {os: macos-latest, target: x86_64-apple-darwin}
+#     - {os: macos-latest, target: aarch64-apple-darwin}
+#     - {os: windows-latest, target: x86_64-pc-windows-msvc}
+# @end-orcastrate

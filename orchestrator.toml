@@ -8,3 +8,6 @@ name = "michidk/redguard-preservation"
 
 [[repos]]
 name = "michidk/vscli"
+
+[[repos]]
+name = "michidk/bitmap2ttf"

@@ -111,11 +111,23 @@ CI renders and lints fixtures for the defaults and both consumer configurations.
 
 ## Rust crate publishing
 
-The `publish-rust-crate` template validates `vX.Y.Z` tags, checks that the root
-Cargo package has the same version, and publishes through crates.io Trusted
-Publishing.
+The `publish-rust-crate` template validates `vX.Y.Z` tags, checks that every
+selected Cargo package has the same version, and publishes through crates.io
+Trusted Publishing. `manifest_paths` defaults to `[Cargo.toml]`. For a workspace,
+list the package manifests in dependency order, with libraries before their
+dependent CLI crates. All versions are checked before any crate is uploaded.
+Cargo waits for each published crate to appear in the registry index before
+the next package is uploaded.
 
 The target repositories do not need a crates.io API token.
+
+For each crate, open its **Settings** page on crates.io and add a GitHub Trusted
+Publisher. Use the target repository owner and name, the publishing workflow's
+filename, and the environment `publish-crates.io`. For example, a workflow at
+`.github/workflows/publish.yml` uses the filename `publish.yml`. Every published
+crate in a workspace needs its own Trusted Publisher with the same settings.
+Create the `publish-crates.io` GitHub environment if it does not exist. Do not
+remove an existing API token until Trusted Publishing has been verified.
 
 To test Trusted Publishing, run **Publish to crates.io** manually and leave
 **auth-only** enabled. This obtains and revokes a temporary token without
@@ -128,6 +140,12 @@ The `rust-bump-version` template provides **Bump Version & Tag**. Run it on the
 default branch and enter the next `X.Y.Z` version. It updates the package version,
 preserves locked dependency versions, and pushes the commit and tag atomically.
 An existing matching version and tag are a no-op.
+
+Both release templates accept `manifest_paths`, defaulting to `[Cargo.toml]`.
+List all packages that share the release version. The bump updates their
+versions and local dependency requirements together, then commits the changed
+Cargo manifests and lockfile. The release checks each selected package's
+version against the tag.
 
 The `rust-release` template verifies the tag and Cargo version, runs formatting,
 clippy, and tests, and builds every configured target before creating a release.
