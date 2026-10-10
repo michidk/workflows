@@ -1,0 +1,12 @@
+# @orcastrate
+# template: rust-release
+# params:
+#   bin_name: rgpre
+#   publish_release: true
+#   targets:
+#     - {os: ubuntu-26.04, target: x86_64-unknown-linux-gnu, lib_file: librgpre.so}
+#     - {os: ubuntu-26.04, target: arm-unknown-linux-gnueabihf, cross: true, lib_file: librgpre.so}
+#     - {os: macos-latest, target: x86_64-apple-darwin, lib_file: librgpre.dylib}
+#     - {os: macos-latest, target: aarch64-apple-darwin, lib_file: librgpre.dylib}
+#     - {os: windows-latest, target: x86_64-pc-windows-msvc, lib_file: rgpre.dll}
+# @end-orcastrate

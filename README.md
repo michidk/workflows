@@ -121,3 +121,33 @@ To test Trusted Publishing, run **Publish to crates.io** manually and leave
 **auth-only** enabled. This obtains and revokes a temporary token without
 uploading a crate. Release events always perform normal publication. Rerunning
 a release skips versions already present on crates.io.
+
+## Rust releases
+
+The `rust-bump-version` template provides **Bump Version & Tag**. Run it on the
+default branch and enter the next `X.Y.Z` version. It updates the package version,
+preserves locked dependency versions, and pushes the commit and tag atomically.
+An existing matching version and tag are a no-op.
+
+The `rust-release` template verifies the tag and Cargo version, runs formatting,
+clippy, and tests, and builds every configured target before creating a release.
+It uses the repository's `cliff.toml` to generate the release body with git-cliff.
+Archives retain their existing names and include a `SHA256SUMS` file.
+
+Configure its frontmatter with `bin_name` and a `targets` list. Each target needs
+`os` and `target`; use `cross: true` for Linux cross compilation and `lib_file`
+to include a separate native-library archive.
+
+Set the Orcastrate parameter `publish_release: true` to publish immediately after
+all artifacts are uploaded. It defaults to false, which creates a draft. A
+published release triggers the local crates.io workflow and any other
+`release: published` workflows, including Homebrew.
+
+Both templates accept `release_token_secret`, defaulting to `RELEASE_TOKEN`.
+That repository secret must contain a token with Contents and Workflows write
+access to the target repository. Version/tag pushes and automatic release
+publication use it because GitHub's default workflow token suppresses downstream
+workflow triggers. Draft creation uses the default workflow token.
+
+The `pr-title` template checks Conventional Commit pull request titles without
+checking out pull request code.
