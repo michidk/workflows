@@ -65,7 +65,7 @@ jobs:
 
   lints:
     name: Lints
-    runs-on: ubuntu-26.04
+    runs-on: {{ runner_os | default(value="ubuntu-26.04") }}
     steps:
       - name: Checkout sources
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

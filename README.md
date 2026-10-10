@@ -104,7 +104,9 @@ actions. Add its frontmatter to `.github/workflows/ci.yml`:
 `test_os` defaults to `[ubuntu-26.04]`. Set `coverage: true` to run the test
 suite through `cargo llvm-cov` with all workspace features and upload LCOV to
 Codacy when `CODACY_API_TOKEN` is configured. Coverage defaults to false.
-Formatting and clippy run once on Ubuntu, independently of the test matrix.
+Formatting and clippy run once on `runner_os`, independently of the test matrix.
+`runner_os` defaults to `ubuntu-26.04`. For Windows-only crates, set both
+`test_os: [windows-latest]` and `runner_os: windows-latest`.
 
 Redguard uses the three-platform test matrix. `vscli` uses Ubuntu with coverage.
 CI renders and lints fixtures for the defaults and both consumer configurations.
@@ -120,6 +122,8 @@ Cargo waits for each published crate to appear in the registry index before
 the next package is uploaded.
 
 The target repositories do not need a crates.io API token.
+Set `runner_os: windows-latest` for crates that require Windows to compile.
+It defaults to `ubuntu-26.04`.
 
 For each crate, open its **Settings** page on crates.io and add a GitHub Trusted
 Publisher. Use the target repository owner and name, the publishing workflow's
@@ -155,6 +159,16 @@ Archives retain their existing names and include a `SHA256SUMS` file.
 Configure its frontmatter with `bin_name` and a `targets` list. Each target needs
 `os` and `target`; use `cross: true` for Linux cross compilation and `lib_file`
 to include a separate native-library archive.
+
+For a Rust library without a CLI, set `library_only: true` instead of `bin_name`
+and `targets`. The release still verifies the package and generates a git-cliff
+body, but does not build or attach binary archives. `runner_os` selects the
+release verification runner and defaults to `ubuntu-26.04`. Use `windows-latest`
+if the package requires Windows.
+
+Commit `Cargo.lock` so the release and publishing workflows can use `--locked`.
+Tests that require hardware or a local WSL distribution must be marked with
+`#[ignore]`. Document how to run them manually; CI still compiles ignored tests.
 
 Set the Orcastrate parameter `publish_release: true` to publish immediately after
 all artifacts are uploaded. It defaults to false, which creates a draft. A

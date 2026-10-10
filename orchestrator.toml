@@ -11,3 +11,12 @@ name = "michidk/vscli"
 
 [[repos]]
 name = "michidk/bitmap2ttf"
+
+[[repos]]
+name = "michidk/displayz"
+
+[[repos]]
+name = "michidk/off-rs"
+
+[[repos]]
+name = "michidk/wslpath2"

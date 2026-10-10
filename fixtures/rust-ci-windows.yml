@@ -1,0 +1,6 @@
+# @orcastrate
+# template: rust-ci
+# params:
+#   test_os: [windows-latest]
+#   runner_os: windows-latest
+# @end-orcastrate

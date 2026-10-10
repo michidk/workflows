@@ -1,0 +1,5 @@
+# @orcastrate
+# template: publish-rust-crate
+# params:
+#   runner_os: windows-latest
+# @end-orcastrate

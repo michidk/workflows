@@ -1,0 +1,5 @@
+# @orcastrate
+# template: rust-release
+# params:
+#   library_only: true
+# @end-orcastrate
