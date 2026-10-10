@@ -87,6 +87,10 @@ on each run. Changes to the preset apply without a sync PR. Orcastrate continues
 to manage the GitHub Actions workflows. Configure repository-specific settings
 alongside `extends` and enable the Renovate GitHub App for the repository.
 
+For a fork you maintain, also set `"forkProcessing": "enabled"` in that
+repository's `renovate.json`. Renovate otherwise skips forks when the App has
+access to all repositories.
+
 ## Rust CI
 
 The `rust-ci` template runs tests, `cargo fmt`, and clippy on every push and
