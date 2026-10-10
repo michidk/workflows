@@ -25,10 +25,11 @@ Template changes do not modify target repositories directly.
 ## Onboard a repository
 
 1. Open your [fine-grained personal access tokens](https://github.com/settings/personal-access-tokens)
-   and edit the token stored as `ORCASTRATE_TOKEN`.
-2. Add the new repository under **Repository access**. Keep these repository
-   permissions set to read and write: **Contents**, **Pull requests**, and
-   **Workflows**.
+   and check the token stored as `ORCASTRATE_TOKEN`.
+2. If the token uses **Only select repositories**, add the new repository under
+   **Repository access**. With **All repositories**, no scope update is needed.
+   Keep these repository permissions set to read and write: **Contents**,
+   **Pull requests**, and **Workflows**.
 3. Add the repository to `orchestrator.toml`:
 
    ```toml
