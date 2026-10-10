@@ -69,6 +69,29 @@ access to Contents, Pull requests, and Workflows in every managed repository.
 The sync passes this token to Orcastrate for both workflow commits and pull
 requests.
 
+## Rust CI
+
+The `rust-ci` template runs tests, `cargo fmt`, and clippy on every push and
+pull request. It uses stable Rust and pinned checkout, toolchain, and cache
+actions. Add its frontmatter to `.github/workflows/ci.yml`:
+
+```yaml
+# @orcastrate
+# template: rust-ci
+# params:
+#   test_os: [ubuntu-24.04, macos-latest, windows-latest]
+#   coverage: false
+# @end-orcastrate
+```
+
+`test_os` defaults to `[ubuntu-26.04]`. Set `coverage: true` to run the test
+suite through `cargo llvm-cov` with all workspace features and upload LCOV to
+Codacy when `CODACY_API_TOKEN` is configured. Coverage defaults to false.
+Formatting and clippy run once on Ubuntu, independently of the test matrix.
+
+Redguard uses the three-platform test matrix. `vscli` uses Ubuntu with coverage.
+CI renders and lints fixtures for the defaults and both consumer configurations.
+
 ## Rust crate publishing
 
 The `publish-rust-crate` template validates `vX.Y.Z` tags, checks that the root
