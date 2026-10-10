@@ -102,39 +102,9 @@ The `publish-rust-crate` template validates `vX.Y.Z` tags, checks that the root
 Cargo package has the same version, and publishes through crates.io Trusted
 Publishing.
 
-Configure these GitHub trusted publishers in the crates.io settings:
-
-| Crate | Repository | Workflow | Environment |
-|---|---|---|---|
-| `redguard-preservation` | `michidk/redguard-preservation` | `publish-cratesio.yml` | `publish-crates.io` |
-| `vscli` | `michidk/vscli` | `publish-cratesio.yml` | `publish-crates.io` |
-
 The target repositories do not need a crates.io API token.
 
 To test Trusted Publishing, run **Publish to crates.io** manually and leave
 **auth-only** enabled. This obtains and revokes a temporary token without
 uploading a crate. Release events always perform normal publication. Rerunning
 a release skips versions already present on crates.io.
-
-## Validate changes and update dependencies
-
-CI builds Orcastrate from a pinned source commit, renders the managed workflow
-fixtures in `fixtures/`, and runs actionlint on the rendered files and this
-repository's workflows. Add a fixture for each template and parameter combination
-that needs coverage.
-
-`renovate.json` enables dependency update PRs for workflows and templates,
-including pinned GitHub Actions and actionlint. Install the
-[Renovate GitHub App](https://github.com/apps/renovate) on this repository to
-activate it. Review and merge the generated PRs before synchronizing consumers.
-
-To onboard another crate:
-
-1. Create a `publish-crates.io` environment in the target GitHub repository.
-2. Add a GitHub trusted publisher in the crate's crates.io settings. Enter the
-   repository owner, repository name, exact managed workflow filename, and the
-   `publish-crates.io` environment.
-3. Add `.github/workflows/publish-cratesio.yml` to the target repository with
-   `template: publish-rust-crate` frontmatter and the rendered workflow body.
-4. Add the repository to the Orcastrate token scope and `orchestrator.toml` as
-   described above.
