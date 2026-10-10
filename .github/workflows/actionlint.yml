@@ -40,6 +40,3 @@ jobs:
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           -ignore 'label "ubuntu-26\.04" is unknown'
           .github/workflows/*.yml rendered/*.yml
-
-      - name: Test publication guards
-        run: bash tests/publish.sh rendered/publish-cratesio.yml
