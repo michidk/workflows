@@ -1,6 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>michidk/workflows//templates/renovate"],
+  "semanticCommits": "enabled",
   "github-actions": {
     "managerFilePatterns": ["/\\.github/workflows/[^/]+\\.ya?ml$/", "/^templates/.*\\.yml$/"]
   },
