@@ -7,8 +7,8 @@ used by michidk repositories.
 ## How updates reach repositories
 
 1. Change a template in `templates/` and merge the change into `main`.
-2. The scheduled sync runs each weekday at 08:00 UTC. You can also run it
-   manually from GitHub Actions.
+2. The push to `main` starts the sync. You can also run it manually from
+   GitHub Actions.
 3. Orcastrate renders each managed workflow and opens or updates a pull request
    when the target repository differs from the template.
 4. Merge the generated pull request to apply the workflow change.
