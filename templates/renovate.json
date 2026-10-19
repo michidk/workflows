@@ -9,6 +9,14 @@
   "labels": ["bot", "dependencies"],
   "packageRules": [
     {
+      "description": "Automerge lockfile maintenance after checks pass",
+      "matchUpdateTypes": ["lockFileMaintenance"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false,
+      "ignoreTests": false
+    },
+    {
       "description": "Group container base image updates",
       "matchManagers": ["dockerfile"],
       "groupName": "container base images"
