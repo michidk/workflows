@@ -6,11 +6,16 @@
     ":enableVulnerabilityAlerts",
     "security:minimumReleaseAgeCrate"
   ],
-  "labels": ["bot", "dependencies"],
+  "labels": [
+    "bot",
+    "dependencies"
+  ],
   "packageRules": [
     {
       "description": "Automerge lockfile maintenance after checks pass",
-      "matchUpdateTypes": ["lockFileMaintenance"],
+      "matchUpdateTypes": [
+        "lockFileMaintenance"
+      ],
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": false,
@@ -18,13 +23,41 @@
     },
     {
       "description": "Group container base image updates",
-      "matchManagers": ["dockerfile"],
+      "matchManagers": [
+        "dockerfile"
+      ],
       "groupName": "container base images"
     },
     {
       "description": "Group GitHub Actions updates",
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "groupName": "github actions"
+    },
+    {
+      "description": "Wait three days before updating npm packages",
+      "matchDatasources": [
+        "npm"
+      ],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Group non-major JavaScript dependency updates",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "JavaScript dependencies"
     }
-  ]
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "before 4am on monday"
+    ]
+  }
 }
