@@ -68,7 +68,8 @@
     {
       "description": "Keep TypeScript below 6.1 until typescript-eslint supports TypeScript 7; typescript-compiler updates independently.",
       "matchManagers": [
-        "npm"
+        "npm",
+        "bun"
       ],
       "matchPackageNames": [
         "typescript"
