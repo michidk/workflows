@@ -88,8 +88,9 @@ to manage the GitHub Actions workflows. Configure repository-specific settings
 alongside `extends` and enable the Renovate GitHub App for the repository.
 
 The preset delays npm package updates by three days and groups minor and patch
-JavaScript dependency updates. The npm manager also handles Bun projects. Major
-updates remain outside that group. Lockfile maintenance runs before 04:00 UTC
+dependency updates separately for JavaScript and Rust. The npm manager also
+handles Bun projects; Rust dependencies use the Cargo manager. Major updates
+remain outside these groups. Lockfile maintenance runs before 04:00 UTC
 on Mondays and automerges after checks pass.
 
 For a fork you maintain, also set `"forkProcessing": "enabled"` in that

@@ -52,6 +52,17 @@
         "patch"
       ],
       "groupName": "JavaScript dependencies"
+    },
+    {
+      "description": "Group non-major Rust dependency updates",
+      "matchManagers": [
+        "cargo"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "Rust dependencies"
     }
   ],
   "lockFileMaintenance": {
