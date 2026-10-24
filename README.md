@@ -115,7 +115,9 @@ actions. Add its frontmatter to `.github/workflows/ci.yml`:
 
 `test_os` defaults to `[ubuntu-26.04]`. Set `coverage: true` to run the test
 suite through `cargo llvm-cov` with all workspace features and write an LCOV
-report. Coverage defaults to false.
+report. Set `codacy: true` to upload that report to Codacy; uploads are
+best-effort and require the repository's `CODACY_API_TOKEN` secret. Both
+options default to false.
 Formatting and clippy run once on `runner_os`, independently of the test matrix.
 `runner_os` defaults to `ubuntu-26.04`. For Windows-only crates, set both
 `test_os: [windows-latest]` and `runner_os: windows-latest`.
