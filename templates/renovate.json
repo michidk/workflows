@@ -63,6 +63,37 @@
         "patch"
       ],
       "groupName": "Rust dependencies"
+    },
+    {
+      "description": "Keep TypeScript below 6.1 until typescript-eslint supports TypeScript 7; typescript-compiler updates independently.",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "typescript"
+      ],
+      "allowedVersions": "<6.1.0"
+    },
+    {
+      "description": "Group non-major Bun dependencies",
+      "matchManagers": [
+        "bun"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "all non-major Bun dependencies",
+      "groupSlug": "all-minor-patch-bun"
+    },
+    {
+      "description": "Group container image updates",
+      "matchManagers": [
+        "dockerfile",
+        "docker-compose",
+        "helm-values"
+      ],
+      "groupName": "container images"
     }
   ],
   "lockFileMaintenance": {
