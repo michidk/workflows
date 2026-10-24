@@ -73,9 +73,10 @@ requests.
 
 ## Renovate
 
-Add this `renovate.json` to a repository to use the shared preset:
+Always place repository Renovate configuration at `.github/renovate.json5`.
+Create that file with the following content to use the shared preset:
 
-```json
+```json5
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>michidk/workflows//templates/renovate"]
@@ -94,7 +95,7 @@ remain outside these groups. Lockfile maintenance runs before 04:00 UTC
 on Mondays and automerges after checks pass.
 
 For a fork you maintain, also set `"forkProcessing": "enabled"` in that
-repository's `renovate.json`. Renovate otherwise skips forks when the App has
+repository's `.github/renovate.json5`. Renovate otherwise skips forks when the App has
 access to all repositories.
 
 ## Rust CI
