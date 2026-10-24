@@ -1,7 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>michidk/workflows//templates/renovate"],
-  "semanticCommits": "enabled",
   "packageRules": [{
     "description": "Keep the sync action on Orcastrate main so fixes reach the orchestrator immediately",
     "matchManagers": ["github-actions"],
