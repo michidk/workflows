@@ -42,3 +42,6 @@ branch = "hauptzweig"
 
 [[repos]]
 name = "michidk/tcplex"
+
+[[repos]]
+name = "michidk/brewscale-rs"
