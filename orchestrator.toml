@@ -20,3 +20,25 @@ name = "michidk/off-rs"
 
 [[repos]]
 name = "michidk/wslpath2"
+
+[[repos]]
+name = "michidk/cyrus"
+
+[[repos]]
+name = "michidk/hodor"
+
+[[repos]]
+name = "michidk/shimesu"
+
+[[repos]]
+name = "michidk/fitsim"
+
+[[repos]]
+name = "michidk/shottimer"
+
+[[repos]]
+name = "michidk/rost"
+branch = "hauptzweig"
+
+[[repos]]
+name = "michidk/tcplex"

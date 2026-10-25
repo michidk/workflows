@@ -1,1 +1,0 @@
-{% include "rust/publish-crate.yml" %}
