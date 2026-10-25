@@ -2,6 +2,8 @@
 # template: node/ci
 # params:
 #   package_manager: bun
+#   formatter: biome
+#   formatter_flags: .
 #   check_command: bun run check
 #   typecheck_command: bun run typecheck
 #   test_command: bun run test

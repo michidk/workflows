@@ -4,6 +4,8 @@ on: [push, pull_request]
 
 permissions:
   contents: read
+  checks: write
+  pull-requests: write
 
 defaults:
   run:
@@ -33,6 +35,15 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+{% endif %}
+
+{% if formatter | default(value="") == "biome" %}
+      - name: Format and lint with Biome
+        uses: mongolyy/reviewdog-action-biome@c49bee54c1f87e4be32446ae3deca3a186b88a3a # v2.11.2
+        with:
+          reporter: ${{ "{{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}" }}
+          fail_on_error: true
+          biome_flags: {{ formatter_flags | default(value=".") }}
 {% endif %}
 
 {% if check_command | default(value="") != "" %}
