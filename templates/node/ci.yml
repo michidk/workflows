@@ -1,11 +1,14 @@
 name: Test & Build
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches: [main]
 
 permissions:
   contents: read
   checks: write
-  pull-requests: write
+ 
 
 defaults:
   run:
@@ -20,7 +23,7 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Set up Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421818 # v2
+        uses: oven-sh/setup-bun@0c5077e51419868618f36085b0efc47a31fe5020 # v2
         with:
           bun-version: {{ bun_version | default(value="1.4.4") }}
       - name: Install dependencies
@@ -28,7 +31,7 @@ jobs:
       - name: Format and lint with Biome
         uses: mongolyy/reviewdog-action-biome@c49bee54c1f87e4be32446ae3deca3a186b88a3a # v2.11.2
         with:
-          reporter: ${{ "{{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}" }}
+          reporter: github-check
           fail_on_error: true
           biome_flags: {{ formatter_flags | default(value=".") }}
 
