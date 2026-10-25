@@ -1,0 +1,42 @@
+name: Test & Verify
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: {{ runner_os | default(value="ubuntu-24.04") }}
+    timeout-minutes: {{ timeout_minutes | default(value=20) }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: {{ uv_version | default(value="latest") }}
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Test
+        run: {{ test_command | default(value="uv run pytest -q") }}
+{% if lint_command | default(value="") != "" %}
+      - name: Lint
+        run: {{ lint_command }}
+{% endif %}
+{% if typecheck_command | default(value="") != "" %}
+      - name: Type check
+        run: {{ typecheck_command }}
+{% endif %}
+{% if hadolint | default(value=false) %}
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.3.0
+        with:
+          dockerfile: {{ dockerfile | default(value="Dockerfile") }}
+{% endif %}

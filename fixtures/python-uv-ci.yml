@@ -1,0 +1,7 @@
+# @orcastrate
+# template: python/uv-ci
+# params:
+#   lint_command: uv run ruff check .
+#   typecheck_command: uv run mypy .
+#   hadolint: true
+# @end-orcastrate

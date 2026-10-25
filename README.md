@@ -26,6 +26,9 @@ The templates are grouped by workflow family:
 ```text
 templates/
   common/   # workflows shared by any repository
+  docker/   # OCI image build and publication
+  node/     # Node.js and Bun checks
+  python/   # Python projects using uv
   rust/     # Rust CI, release, publishing, and version bump workflows
   presets/  # reusable configuration files, such as Renovate
 ```
@@ -211,3 +214,24 @@ The `common/pr-title` template checks Conventional Commit pull request titles wi
 checking out pull request code.
 
 The previous preset path, `github>michidk/workflows//templates/renovate`, remains available as a redirect to the canonical preset for existing consumers.
+
+## Node and Bun CI
+
+The `node/ci` template installs either Bun or npm dependencies and runs the
+checks supplied in its parameters. Use `package_manager: npm` for npm projects;
+the default is Bun. The command parameters are optional so repositories can
+keep their existing check, test, verification, and build commands.
+
+## Python CI
+
+The `python/uv-ci` template uses a locked `uv sync`, runs pytest by default,
+and optionally runs linting, type checking, and Hadolint. It is intended for
+Python services with a committed `uv.lock`.
+
+## OCI image publishing
+
+The `docker/oci-publish` template builds and publishes a multi-platform image
+to GHCR on version tags or manual dispatch. It centralizes the Docker action
+versions, QEMU/Buildx setup, metadata, registry login, and GitHub Actions cache.
+Application checks and multi-job digest assembly remain repository-owned when
+they need more than this basic publish path.

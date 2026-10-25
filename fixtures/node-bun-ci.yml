@@ -1,0 +1,9 @@
+# @orcastrate
+# template: node/ci
+# params:
+#   package_manager: bun
+#   check_command: bun run check
+#   typecheck_command: bun run typecheck
+#   test_command: bun run test
+#   build_command: bun run build
+# @end-orcastrate

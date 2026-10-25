@@ -1,0 +1,5 @@
+# @orcastrate
+# template: docker/oci-publish
+# params:
+#   platforms: linux/amd64,linux/arm64
+# @end-orcastrate
