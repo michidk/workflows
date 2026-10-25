@@ -50,7 +50,4 @@ name = "michidk/brewscale-rs"
 name = "michidk/divecalc"
 
 [[repos]]
-name = "michidk/icecheck"
-
-[[repos]]
 name = "michidk-cluster/hn-scheduler"

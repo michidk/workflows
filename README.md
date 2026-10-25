@@ -217,14 +217,12 @@ The previous preset path, `github>michidk/workflows//templates/renovate`, remain
 
 ## Node and Bun CI
 
-The `node/ci` template installs either Bun or npm dependencies and runs the
-checks supplied in its parameters. Use `package_manager: npm` for npm projects;
-the default is Bun. The command parameters are optional so repositories can
-keep their existing check, test, verification, and build commands. Set
-`formatter: biome` when the project uses Biome; the template then reports
-formatting and lint diagnostics through Reviewdog as PR annotations and fails
-the check when diagnostics remain. Formatter integrations belong in the
-template so action pins and reporting permissions stay consistent.
+The `node/ci` template supports Bun projects and installs dependencies with
+`bun install --frozen-lockfile`. Biome is the required TypeScript and
+JavaScript formatter and linter; it runs through Reviewdog, producing PR
+annotations and failing the check when diagnostics remain. The command
+parameters are optional so repositories can keep their existing test,
+verification, and build commands.
 
 ## Python CI
 
