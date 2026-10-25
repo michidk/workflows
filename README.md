@@ -155,9 +155,12 @@ a release skips versions already present on crates.io.
 ## Rust releases
 
 The `rust-bump-version` template provides **Bump Version & Tag**. Run it on the
-default branch and enter the next `X.Y.Z` version. It updates the package version,
-preserves locked dependency versions, and pushes the commit and tag atomically.
-An existing matching version and tag are a no-op.
+default branch and choose an automatic, patch, minor, or major bump, defaulting
+to patch. The automatic option uses git-cliff and Conventional Commit messages
+to choose the bump. The workflow calculates the next `X.Y.Z` version, updates
+the package version, preserves locked dependency versions, and pushes the commit
+and tag atomically. If git-cliff finds no unreleased changes, the workflow is a
+no-op. An existing next-version tag at another commit causes it to fail.
 
 Both release templates accept `manifest_paths`, defaulting to `[Cargo.toml]`.
 List all packages that share the release version. The bump updates their
