@@ -45,3 +45,12 @@ name = "michidk/tcplex"
 
 [[repos]]
 name = "michidk/brewscale-rs"
+
+[[repos]]
+name = "michidk/divecalc"
+
+[[repos]]
+name = "michidk/icecheck"
+
+[[repos]]
+name = "michidk-cluster/hn-scheduler"
