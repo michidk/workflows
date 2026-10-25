@@ -18,7 +18,7 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Set up uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@e58605a9b6da7c637471fab8847a5e5a6b8df081 # v5
         with:
           version: {{ uv_version | default(value="latest") }}
           enable-cache: true
@@ -36,7 +36,7 @@ jobs:
 {% endif %}
 {% if hadolint | default(value=false) %}
       - name: Lint Dockerfile
-        uses: hadolint/hadolint-action@v3.3.0
+        uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5 # v3.3.0
         with:
           dockerfile: {{ dockerfile | default(value="Dockerfile") }}
 {% endif %}

@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Run Orcastrate
-        uses: michidk/orcastrate@main
+        uses: michidk/orcastrate@2be0c85998bacb0649a3549c07fbcb2230d446c3 # main
         with:
           orcastrate-token: ${{ secrets.ORCASTRATE_TOKEN }}
           github-token: ${{ secrets.ORCASTRATE_TOKEN }}
