@@ -32,9 +32,9 @@ jobs:
           fail_on_error: true
           biome_flags: {{ formatter_flags | default(value=".") }}
 
-{% if check_command | default(value="") != "" %}
-      - name: Check formatting and lint
-        run: {{ check_command }}
+{% if lint_command | default(value="") != "" %}
+      - name: Additional lint
+        run: {{ lint_command }}
 {% endif %}
 {% if typecheck_command | default(value="") != "" %}
       - name: Type check

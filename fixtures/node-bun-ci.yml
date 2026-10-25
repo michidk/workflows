@@ -2,7 +2,7 @@
 # template: node/ci
 # params:
 #   formatter_flags: .
-#   check_command: bun run check
+#   lint_command: bun run check
 #   typecheck_command: bun run typecheck
 #   test_command: bun run test
 #   build_command: bun run build
