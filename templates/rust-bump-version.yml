@@ -103,6 +103,10 @@ jobs:
             echo '::error::git-cliff did not produce a stable X.Y.Z version.'
             exit 1
           fi
+          if [[ "$current" != "$VERSION" && "$(printf '%s\n' "$current" "$VERSION" | sort -V | head -1)" != "$current" ]]; then
+            echo '::error::The calculated version is older than the current Cargo version.'
+            exit 1
+          fi
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           if git show-ref --verify --quiet "refs/tags/v$VERSION"; then
             if [[ "$current" == "$VERSION" && "$(git rev-parse "v$VERSION^{commit}")" == "$(git rev-parse HEAD)" ]]; then

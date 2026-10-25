@@ -16,12 +16,16 @@ class VersionBumpTest(unittest.TestCase):
     def calculate(self, versions, bump, tag_exists=False):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "env"
+            cliff = Path(directory) / "git-cliff/bin/git-cliff"
+            cliff.parent.mkdir(parents=True)
+            cliff.write_text("#!/bin/sh\nprintf '1.2.3\\n'\n")
+            cliff.chmod(0o755)
             result = subprocess.run(
                 ["bash", "-euo", "pipefail", "-c",
                  'versions=("$@")\ngit() { return "$TAG_STATUS"; }\n' + SCRIPT,
                  "test", *versions],
                 env={**os.environ, "BUMP_TYPE": bump, "GITHUB_ENV": str(output),
-                     "TAG_STATUS": "0" if tag_exists else "1"},
+                     "TAG_STATUS": "0" if tag_exists else "1", "RUNNER_TEMP": directory},
                 text=True, capture_output=True,
             )
             return result, output.read_text() if output.exists() else ""
@@ -59,6 +63,12 @@ class VersionBumpTest(unittest.TestCase):
         result, _ = self.calculate(["1.2.3"], "patch", tag_exists=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("next version tag already exists", result.stdout)
+
+    def test_calculated_version_cannot_be_older_than_cargo_version(self):
+        result, output = self.calculate(["2.0.0"], "auto")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(output, "")
+        self.assertIn("older than the current Cargo version", result.stdout)
 
 
 if __name__ == "__main__":
