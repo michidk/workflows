@@ -20,6 +20,15 @@ Template changes do not modify target repositories directly.
 - `orchestrator.toml` lists the managed repositories.
 - `templates/` contains the canonical Tera workflow templates and Renovate preset.
 - `.github/workflows/sync.yml` runs Orcastrate.
+
+The templates are grouped by workflow family:
+
+```text
+templates/
+  common/   # workflows shared by any repository
+  rust/     # Rust CI, release, publishing, and version bump workflows
+  presets/  # reusable configuration files, such as Renovate
+```
 - `.github/workflows/actionlint.yml` validates this repository.
 
 ## Onboard a repository
@@ -43,7 +52,7 @@ Template changes do not modify target repositories directly.
 
    ```yaml
    # @orcastrate
-   # template: publish-rust-crate
+   # template: rust/publish-crate
    # @end-orcastrate
 
    # The rendered workflow starts here and must be valid GitHub Actions YAML.
@@ -79,11 +88,11 @@ Create that file with the following content to use the shared preset:
 ```json5
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>michidk/workflows//templates/renovate"]
+  "extends": ["github>michidk/workflows//templates/presets/renovate"]
 }
 ```
 
-Renovate reads `templates/renovate.json` from this repository's default branch
+Renovate reads `templates/presets/renovate.json` from this repository's default branch
 on each run. Changes to the preset apply without a sync PR. Orcastrate continues
 to manage the GitHub Actions workflows. Configure repository-specific settings
 alongside `extends` and enable the Renovate GitHub App for the repository.
@@ -100,13 +109,13 @@ access to all repositories.
 
 ## Rust CI
 
-The `rust-ci` template runs tests, `cargo fmt`, and clippy on every push and
+The `rust/ci` template runs tests, `cargo fmt`, and clippy on every push and
 pull request. It uses stable Rust and pinned checkout, toolchain, and cache
 actions. Add its frontmatter to `.github/workflows/ci.yml`:
 
 ```yaml
 # @orcastrate
-# template: rust-ci
+# template: rust/ci
 # params:
 #   test_os: [ubuntu-24.04, macos-latest, windows-latest]
 #   coverage: false
@@ -127,7 +136,7 @@ CI renders and lints fixtures for the defaults and both consumer configurations.
 
 ## Rust crate publishing
 
-The `publish-rust-crate` template validates `vX.Y.Z` tags, checks that every
+The `rust/publish-crate` template validates `vX.Y.Z` tags, checks that every
 selected Cargo package has the same version, and publishes through crates.io
 Trusted Publishing. `manifest_paths` defaults to `[Cargo.toml]`. For a workspace,
 list the package manifests in dependency order, with libraries before their
@@ -154,7 +163,7 @@ a release skips versions already present on crates.io.
 
 ## Rust releases
 
-The `rust-bump-version` template provides **Bump Version & Tag**. Run it on the
+The `rust/bump-version` template provides **Bump Version & Tag**. Run it on the
 default branch and choose an automatic, patch, minor, or major bump, defaulting
 to patch. The automatic option uses git-cliff and Conventional Commit messages
 to choose the bump. The workflow calculates the next `X.Y.Z` version, updates
@@ -168,7 +177,7 @@ versions and local dependency requirements together, then commits the changed
 Cargo manifests and lockfile. The release checks each selected package's
 version against the tag.
 
-The `rust-release` template verifies the tag and Cargo version, runs formatting,
+The `rust/release` template verifies the tag and Cargo version, runs formatting,
 clippy, and tests, and builds every configured target before creating a release.
 It uses the repository's `cliff.toml` to generate the release body with git-cliff.
 Archives retain their existing names and include a `SHA256SUMS` file.
@@ -198,5 +207,5 @@ access to the target repository. Version/tag pushes and automatic release
 publication use it because GitHub's default workflow token suppresses downstream
 workflow triggers. Draft creation uses the default workflow token.
 
-The `pr-title` template checks Conventional Commit pull request titles without
+The `common/pr-title` template checks Conventional Commit pull request titles without
 checking out pull request code.

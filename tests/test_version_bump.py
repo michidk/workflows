@@ -6,7 +6,7 @@ import tempfile
 import textwrap
 import unittest
 
-TEMPLATE = (Path(__file__).resolve().parents[1] / "templates/rust-bump-version.yml").read_text()
+TEMPLATE = (Path(__file__).resolve().parents[1] / "templates/rust/bump-version.yml").read_text()
 START = TEMPLATE.index('          current="$(printf')
 END = TEMPLATE.index('\n      - name: Install cargo-edit', START)
 SCRIPT = textwrap.dedent(TEMPLATE[START:END])
