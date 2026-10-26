@@ -20,8 +20,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      - name: Create Orcastrate App token
+        id: app-token
+        uses: actions/create-github-app-token@0f859bf9e69e887678d5bbfbee594437cb440ffe # v2.1.0
+        with:
+          app-id: ${{ vars.ORCASTRATE_APP_ID }}
+          private-key: ${{ secrets.ORCASTRATE_PRIVATE_KEY }}
+          installation-id: ${{ vars.ORCASTRATE_INSTALLATION_ID }}
+          owner: michidk
+          repositories: |
+            redguard-preservation
+            vscli
+            bitmap2ttf
+            displayz
+            off-rs
+            wslpath2
+            cyrus
+            hodor
+            shimesu
+            fitsim
+            shottimer
+            rost
+            tcplex
+            brewscale-rs
+            divecalc
+            icecheck
+
       - name: Run Orcastrate
         uses: michidk/orcastrate@2be0c85998bacb0649a3549c07fbcb2230d446c3 # main
         with:
-          orcastrate-token: ${{ secrets.ORCASTRATE_TOKEN }}
-          github-token: ${{ secrets.ORCASTRATE_TOKEN }}
+          orcastrate-token: ${{ steps.app-token.outputs.token }}
+          github-token: ${{ steps.app-token.outputs.token }}
