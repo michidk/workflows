@@ -1,0 +1,133 @@
+# @orcastrate
+# template: python/bump-version
+# @end-orcastrate
+name: Bump Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  bump:
+    name: Bump version and tag
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Create release App token
+        id: release-token
+        uses: actions/create-github-app-token@0f859bf9e69e887678d5bbfbee594437cb440ffe # v2.1.0
+        with:
+          app-id: ${{ "{{ secrets.RELEASER_APP_ID }}" }}
+          private-key: ${{ "{{ secrets.RELEASER_APP_PRIVATE_KEY }}" }}
+          owner: ${{ "{{ github.repository_owner }}" }}
+          repositories: ${{ "{{ github.event.repository.name }}" }}
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ "{{ steps.release-token.outputs.token }}" }}
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Get current version
+        id: current
+        run: |
+          version=$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Bump version in Python metadata
+        run: |
+          python - "${{ "{{ inputs.bump }}" }}" <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+          import tomllib
+
+          bump = sys.argv[1]
+          pyproject_path = Path("pyproject.toml")
+          pyproject = pyproject_path.read_text()
+          metadata = tomllib.loads(pyproject)
+          project_name = metadata["project"]["name"]
+          current = metadata["project"]["version"]
+          major, minor, patch = map(int, current.split("."))
+
+          if bump == "major":
+              major, minor, patch = major + 1, 0, 0
+          elif bump == "minor":
+              minor, patch = minor + 1, 0
+          elif bump == "patch":
+              patch += 1
+          else:
+              raise SystemExit(f"Unsupported bump type: {bump}")
+
+          new = f"{major}.{minor}.{patch}"
+          old_version_line = f'version = "{current}"'
+          if pyproject.count(old_version_line) != 1:
+              raise SystemExit(f"Expected one project version line for {current}")
+          pyproject_path.write_text(pyproject.replace(old_version_line, f'version = "{new}"', 1))
+
+          lock_path = Path("uv.lock")
+          if lock_path.exists():
+              lock = lock_path.read_text()
+              pattern = rf'(?m)(^name = "{re.escape(project_name)}"\nversion = "){re.escape(current)}("$)'
+              lock, replacements = re.subn(pattern, rf'\g<1>{new}\g<2>', lock, count=1)
+              if replacements != 1:
+                  raise SystemExit(f"Could not update {project_name} {current} in uv.lock")
+              lock_path.write_text(lock)
+
+          chart_path = Path("helm/Chart.yaml")
+          chart = chart_path.read_text()
+          chart_replacements = {
+              f'version: {current}': f'version: {new}',
+              f'appVersion: "{current}"': f'appVersion: "{new}"',
+          }
+          for old, replacement in chart_replacements.items():
+              if chart.count(old) != 1:
+                  raise SystemExit(f"Expected one {old} line in helm/Chart.yaml")
+              chart = chart.replace(old, replacement, 1)
+          chart_path.write_text(chart)
+
+          example_path = Path("helm/values-example.yaml")
+          example = example_path.read_text()
+          old_image_tag = f'  tag: "{current}"'
+          if example.count(old_image_tag) != 1:
+              raise SystemExit(f"Expected one image tag {current} in helm/values-example.yaml")
+          example_path.write_text(example.replace(old_image_tag, f'  tag: "{new}"', 1))
+          PY
+      - name: Get new version
+        id: new
+        run: |
+          version=$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+      - name: Commit and tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pyproject.toml uv.lock helm/Chart.yaml helm/values-example.yaml
+          git commit -m "chore(release): ${{ "{{ steps.new.outputs.tag }}" }}"
+          git tag "${{ "{{ steps.new.outputs.tag }}" }}"
+          git push origin main --tags
+      - name: Summary
+        run: |
+          {
+            echo "### Version Bumped"
+            echo ""
+            echo "**${{ "{{ steps.current.outputs.version }}" }}** → **${{ "{{ steps.new.outputs.version }}" }}** (${{ "{{ inputs.bump }}" }})"
+            echo ""
+            echo "Tag \`${{ "{{ steps.new.outputs.tag }}" }}\` pushed — release workflow will build and publish."
+          } >> "$GITHUB_STEP_SUMMARY"

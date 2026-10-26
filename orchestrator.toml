@@ -52,3 +52,6 @@ name = "michidk/divecalc"
 
 [[repos]]
 name = "michidk/icecheck"
+[[repos]]
+name = "michidk/liftosaur2garmin"
+
