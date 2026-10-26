@@ -55,3 +55,23 @@ name = "michidk/icecheck"
 [[repos]]
 name = "michidk/liftosaur2garmin"
 
+[[repos]]
+name = "michidk/CodeTend"
+
+[[repos]]
+name = "michidk/brewscale-web"
+
+[[repos]]
+name = "michidk/divetracx"
+
+[[repos]]
+name = "michidk/miseshare"
+
+[[repos]]
+name = "michidk/roastbook"
+
+[[repos]]
+name = "michidk/shadcn-3d-viewer"
+
+[[repos]]
+name = "michidk/sticks-and-clay"
