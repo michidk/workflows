@@ -3,7 +3,6 @@
 # params:
 #   bin_name: vscli
 #   publish_release: false
-#   release_token_secret: COMMITTER_TOKEN
 #   targets:
 #     - {os: ubuntu-26.04, target: x86_64-unknown-linux-musl, cross: true}
 #     - {os: ubuntu-26.04, target: arm-unknown-linux-gnueabihf, cross: true}

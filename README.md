@@ -204,11 +204,11 @@ all artifacts are uploaded. It defaults to false, which creates a draft. A
 published release triggers the local crates.io workflow and any other
 `release: published` workflows, including Homebrew.
 
-Both templates accept `release_token_secret`, defaulting to `RELEASE_TOKEN`.
-That repository secret must contain a token with Contents and Workflows write
-access to the target repository. Version/tag pushes and automatic release
-publication use it because GitHub's default workflow token suppresses downstream
-workflow triggers. Draft creation uses the default workflow token.
+The release and version bump templates use the `RELEASE_PAT` repository secret.
+It must contain a token with Contents and Workflows write access to the target
+repository. Version/tag pushes and automatic release publication use it because
+GitHub's default workflow token suppresses downstream workflow triggers. Draft
+creation uses the default workflow token.
 
 The `common/pr-title` template checks Conventional Commit pull request titles without
 checking out pull request code.
