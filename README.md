@@ -202,11 +202,11 @@ all artifacts are uploaded. It defaults to false, which creates a draft. A
 published release triggers the local crates.io workflow and any other
 `release: published` workflows, including Homebrew.
 
-The release and version bump templates use the `RELEASE_PAT` repository secret.
-It must contain a token with Contents and Workflows write access to the target
-repository. Version/tag pushes and automatic release publication use it because
-GitHub's default workflow token suppresses downstream workflow triggers. Draft
-creation uses the default workflow token.
+The release and version bump templates use the `RELEASER_APP_ID` and
+`RELEASER_APP_PRIVATE_KEY` repository secrets to mint short-lived GitHub App
+tokens. The App needs Contents and Actions write access to each target
+repository. GitHub's default workflow token suppresses downstream workflow
+triggers, so releases use the App token when publishing.
 
 The `common/pr-title` template checks Conventional Commit pull request titles without
 checking out pull request code.
@@ -237,7 +237,8 @@ they need more than this basic publish path.
 ## Secret synchronization
 
 The manual **Sync Actions secrets** workflow uses `vars.SECRET_SYNC_APP_ID`
-and `secrets.SECRET_SYNC_APP_PRIVATE_KEY`. Store the value to distribute in
-`secrets.RELEASE_PAT`. It defaults to a dry run and only targets the explicit
-repository and secret allowlists in `.github/workflows/sync-secrets.yml`.
+and `secrets.SECRET_SYNC_APP_PRIVATE_KEY`. Store the Releaser App credentials
+in `vars.RELEASER_APP_ID` and `secrets.RELEASER_APP_PRIVATE_KEY`. It defaults
+to a dry run and only targets the explicit repository and secret allowlists in
+`.github/workflows/sync-secrets.yml`.
 The App needs repository **Secrets: read and write** permission.
