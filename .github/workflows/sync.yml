@@ -26,7 +26,6 @@ jobs:
         with:
           app-id: ${{ vars.ORCASTRATE_APP_ID }}
           private-key: ${{ secrets.ORCASTRATE_PRIVATE_KEY }}
-          installation-id: ${{ vars.ORCASTRATE_INSTALLATION_ID }}
           owner: michidk
           repositories: |
             redguard-preservation

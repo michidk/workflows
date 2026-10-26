@@ -76,8 +76,9 @@ TAG_NAME: ${{ "{{ github.ref_name }}" }}
 ## Authentication
 
 The sync workflow authenticates with the `michidk-orcastrate` GitHub App. Its
-App ID and installation ID are repository variables named
-`ORCASTRATE_APP_ID` and `ORCASTRATE_INSTALLATION_ID`. Store the downloaded PEM
+App ID is the repository variable `ORCASTRATE_APP_ID`. The token action
+discovers the installation using `owner: michidk`; installation ID variables
+are not required. Store the downloaded PEM
 key as the `ORCASTRATE_PRIVATE_KEY` repository secret in `michidk/workflows`.
 
 ## Renovate
@@ -232,3 +233,11 @@ to GHCR on version tags or manual dispatch. It centralizes the Docker action
 versions, QEMU/Buildx setup, metadata, registry login, and GitHub Actions cache.
 Application checks and multi-job digest assembly remain repository-owned when
 they need more than this basic publish path.
+
+## Secret synchronization
+
+The manual **Sync Actions secrets** workflow uses `vars.SECRET_SYNC_APP_ID`
+and `secrets.SECRET_SYNC_APP_PRIVATE_KEY`. Store the value to distribute in
+`secrets.RELEASE_PAT`. It defaults to a dry run and only targets the explicit
+repository and secret allowlists in `.github/workflows/sync-secrets.yml`.
+The App needs repository **Secrets: read and write** permission.
