@@ -1,4 +1,3 @@
-{% raw %}
 name: CI
 
 on:
@@ -38,4 +37,3 @@ jobs:
       - run: bun audit --production
       - run: bun run verify:full
       - run: git diff --exit-code -- src/routeTree.gen.ts
-{% endraw %}

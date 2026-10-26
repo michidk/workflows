@@ -1,4 +1,3 @@
-{% raw %}
 name: Container image
 
 on:
@@ -32,8 +31,7 @@ jobs:
           '
       - name: Publish immutable release
         env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_TOKEN: ${{ "{{ secrets.GITHUB_TOKEN }}" }}
         run: |
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           docker push "ghcr.io/michidk/sticks-and-clay:sha-${GITHUB_SHA}"
-{% endraw %}

@@ -1,4 +1,3 @@
-{% raw %}
 name: Verify
 
 on:
@@ -28,8 +27,8 @@ jobs:
       DATABASE_URL: postgres://studio:test-only-password@127.0.0.1:5432/studio_test
       TEST_DATABASE: "1"
       TEST_REFERENCE_DATABASE: "1"
-      STUDIO_DATA_DIR: ${{ github.workspace }}/data/test
-      STUDIO_PYTHON: ${{ github.workspace }}/.venv/bin/python
+      STUDIO_DATA_DIR: ${{ "{{ github.workspace }}" }}/data/test
+      STUDIO_PYTHON: ${{ "{{ github.workspace }}" }}/.venv/bin/python
       EVE_PASSWORD: ci-only-secret-not-used-by-any-live-service
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -57,4 +56,3 @@ jobs:
             blender.test_analyze_mesh blender.test_materials blender.test_material_quality \
             blender.test_build_artifacts blender.test_workspace blender.test_build_runtime \
             blender.test_cancellation scripts.test_provider scripts.test_services
-{% endraw %}

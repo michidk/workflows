@@ -1,4 +1,3 @@
-{% raw %}
 name: Checks and Build
 
 on:
@@ -11,14 +10,14 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ "{{ github.repository }}" }}
 
 permissions:
   contents: read
 
 concurrency:
-  group: checks-build-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+  group: checks-build-${{ "{{ github.ref }}" }}
+  cancel-in-progress: ${{ "{{ github.ref_type != 'tag' }}" }}
 
 jobs:
   checks:
@@ -72,7 +71,7 @@ jobs:
         run: docker compose config --quiet
 
   build:
-    name: build (${{ matrix.platform }})
+    name: build (${{ "{{ matrix.platform }}" }})
     strategy:
       fail-fast: false
       matrix:
@@ -83,7 +82,7 @@ jobs:
           - platform: linux/arm64
             arch: arm64
             runner: ubuntu-24.04-arm
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ "{{ matrix.runner }}" }}
     timeout-minutes: 30
     needs: checks
     permissions:
@@ -99,39 +98,39 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ "{{ env.REGISTRY }}" }}
+          username: ${{ "{{ github.actor }}" }}
+          password: ${{ "{{ secrets.GITHUB_TOKEN }}" }}
 
       - name: Extract image labels
         id: labels
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ "{{ env.REGISTRY }}" }}/${{ "{{ env.IMAGE_NAME }}" }}
 
       - name: Build and push
         id: build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          platforms: ${{ matrix.platform }}
-          outputs: ${{ github.event_name != 'pull_request' && format('type=image,name={0}/{1},push-by-digest=true,name-canonical=true,push=true', env.REGISTRY, env.IMAGE_NAME) || '' }}
-          labels: ${{ steps.labels.outputs.labels }}
-          cache-from: type=gha,scope=build-${{ matrix.arch }}
-          cache-to: type=gha,mode=max,scope=build-${{ matrix.arch }}
+          platforms: ${{ "{{ matrix.platform }}" }}
+          outputs: ${{ "{{ github.event_name != 'pull_request' && format('type=image,name={0}/{1},push-by-digest=true,name-canonical=true,push=true', env.REGISTRY, env.IMAGE_NAME) || '' }}" }}
+          labels: ${{ "{{ steps.labels.outputs.labels }}" }}
+          cache-from: type=gha,scope=build-${{ "{{ matrix.arch }}" }}
+          cache-to: type=gha,mode=max,scope=build-${{ "{{ matrix.arch }}" }}
 
       - name: Export image digest
         if: github.event_name != 'pull_request'
         run: |
           mkdir -p /tmp/digests
-          digest='${{ steps.build.outputs.digest }}'
+          digest='${{ "{{ steps.build.outputs.digest }}" }}'
           touch "/tmp/digests/${digest#sha256:}"
 
       - name: Upload image digest
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: digest-${{ matrix.arch }}
+          name: digest-${{ "{{ matrix.arch }}" }}
           path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
@@ -159,27 +158,27 @@ jobs:
       - name: Log in to Container Registry
         uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ "{{ env.REGISTRY }}" }}
+          username: ${{ "{{ github.actor }}" }}
+          password: ${{ "{{ secrets.GITHUB_TOKEN }}" }}
 
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ "{{ env.REGISTRY }}" }}/${{ "{{ env.IMAGE_NAME }}" }}
           tags: |
             type=ref,event=branch
             type=sha,prefix=sha-
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{ "{{version}}" }}
+            type=semver,pattern={{ "{{major}}" }}.{{ "{{minor}}" }}
+            type=raw,value=latest,enable={{ "{{is_default_branch}}" }}
 
       - name: Create multi-platform manifest
         working-directory: /tmp/digests
         env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          TAGS: ${{ steps.meta.outputs.tags }}
+          IMAGE: ${{ "{{ env.REGISTRY }}" }}/${{ "{{ env.IMAGE_NAME }}" }}
+          TAGS: ${{ "{{ steps.meta.outputs.tags }}" }}
         run: |
           tag_args=()
           while IFS= read -r tag; do
@@ -192,4 +191,3 @@ jobs:
           done
 
           docker buildx imagetools create "${tag_args[@]}" "${sources[@]}"
-{% endraw %}
