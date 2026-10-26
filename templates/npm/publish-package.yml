@@ -1,0 +1,110 @@
+name: Publish npm package
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      auth-only:
+        description: Verify npm Trusted Publishing without uploading a package
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-npm-${{ "{{ github.repository }}" }}-${{ "{{ github.ref }}" }}
+  cancel-in-progress: false
+
+env:
+  TAG_NAME: ${{ "{{ github.ref_name }}" }}
+  REF_TYPE: ${{ "{{ github.ref_type }}" }}
+
+jobs:
+  validate-tag:
+    name: Validate selected tag
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Require a release tag
+        run: |
+          if [[ "$AUTH_ONLY" != "true" && ( "$REF_TYPE" != "tag" || ! "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ) ]]; then
+            printf 'Select a release tag when dispatching this workflow: %s\n' "$TAG_NAME" >&2
+            exit 1
+          fi
+        env:
+          AUTH_ONLY: ${{ "{{ github.event_name == 'workflow_dispatch' && inputs.auth-only }}" }}
+
+  publish:
+    name: Publish package
+    needs: validate-tag
+    if: ${{ "{{ github.event_name != 'release' || !github.event.release.prerelease }}" }}
+    runs-on: {{ runner_os | default(value="ubuntu-24.04") }}
+{% if environment | default(value="") != "" %}    environment: {{ environment }}
+{% endif %}    steps:
+      - name: Checkout release sources
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ "{{ github.sha }}" }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: {{ node_version | default(value="24") }}
+          registry-url: https://registry.npmjs.org
+
+      - name: Install npm CLI with Trusted Publishing support
+        run: npm install --global npm@11.6.2
+
+{% if package_manager | default(value="bun") == "bun" %}
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: {{ bun_version | default(value="1.4.4") }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+{% else %}
+      - name: Install dependencies
+        run: npm ci
+{% endif %}
+
+      - name: Verify release tag and package version
+        run: |
+          node -e 'const p = require("./package.json"); if (process.env.GITHUB_REF_NAME !== `v${p.version}`) { console.error(`Release tag must be v${p.version}`); process.exit(1) }'
+          git fetch origin main:refs/remotes/origin/main
+          git merge-base --is-ancestor HEAD origin/main
+
+{% if verify_command | default(value="") != "" %}
+      - name: Verify package
+        run: {{ verify_command }}
+{% endif %}
+{% if build_command | default(value="") != "" %}
+      - name: Build package
+        run: {{ build_command }}
+{% endif %}
+
+      - name: Check whether the version is already published
+        id: registry
+        run: |
+          package_name="$(node -p 'require("./package.json").name')"
+          package_version="$(node -p 'require("./package.json").version')"
+          status="$(npm view "$package_name@$package_version" version --registry=https://registry.npmjs.org 2>/dev/null || true)"
+          if [[ "$status" == "$package_version" ]]; then
+            echo 'published=true' >> "$GITHUB_OUTPUT"
+          elif [[ -z "$status" ]]; then
+            echo 'published=false' >> "$GITHUB_OUTPUT"
+          else
+            printf 'Unexpected npm registry response for %s@%s: %s\n' "$package_name" "$package_version" "$status" >&2
+            exit 1
+          fi
+
+      - name: Prepare package without publishing
+        if: ${{ "{{ github.event_name == 'workflow_dispatch' && inputs.auth-only }}" }}
+        run: npm pack --dry-run
+
+      - name: Publish through npm Trusted Publishing
+        if: ${{ "{{ !(github.event_name == 'workflow_dispatch' && inputs.auth-only) && steps.registry.outputs.published == 'false' }}" }}
+        run: npm publish --access public

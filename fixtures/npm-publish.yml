@@ -1,0 +1,7 @@
+# @orcastrate
+# template: npm/publish-package
+# params:
+#   package_manager: bun
+#   verify_command: npm run check && npm test
+#   build_command: npm run build
+# @end-orcastrate
