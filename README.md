@@ -36,12 +36,9 @@ templates/
 
 ## Onboard a repository
 
-1. Open your [fine-grained personal access tokens](https://github.com/settings/personal-access-tokens)
-   and check the token stored as `ORCASTRATE_TOKEN`.
-2. If the token uses **Only select repositories**, add the new repository under
-   **Repository access**. With **All repositories**, no scope update is needed.
-   Keep these repository permissions set to read and write: **Contents**,
-   **Pull requests**, and **Workflows**.
+1. Open the `michidk-orcastrate` GitHub App installation and add the new
+   repository. Grant the App read and write access to **Contents**, **Pull
+   requests**, and **Workflows**.
 3. Add the repository to `orchestrator.toml`:
 
    ```toml
@@ -78,10 +75,10 @@ TAG_NAME: ${{ "{{ github.ref_name }}" }}
 
 ## Authentication
 
-Add an `ORCASTRATE_TOKEN` repository secret. The token needs read and write
-access to Contents, Pull requests, and Workflows in every managed repository.
-The sync passes this token to Orcastrate for both workflow commits and pull
-requests.
+The sync workflow authenticates with the `michidk-orcastrate` GitHub App. Its
+App ID and installation ID are repository variables named
+`ORCASTRATE_APP_ID` and `ORCASTRATE_INSTALLATION_ID`. Store the downloaded PEM
+key as the `ORCASTRATE_PRIVATE_KEY` repository secret in `michidk/workflows`.
 
 ## Renovate
 
