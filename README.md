@@ -213,8 +213,6 @@ workflow triggers. Draft creation uses the default workflow token.
 The `common/pr-title` template checks Conventional Commit pull request titles without
 checking out pull request code.
 
-The previous preset path, `github>michidk/workflows//templates/renovate`, remains available as a redirect to the canonical preset for existing consumers.
-
 ## Node and Bun CI
 
 The `node/ci` template supports Bun projects and installs dependencies with
