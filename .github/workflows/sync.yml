@@ -44,6 +44,7 @@ jobs:
             brewscale-rs
             divecalc
             icecheck
+            liftosaur2garmin
 
       - name: Run Orcastrate
         uses: michidk/orcastrate@2be0c85998bacb0649a3549c07fbcb2230d446c3 # main
