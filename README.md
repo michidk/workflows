@@ -166,7 +166,7 @@ a release skips versions already present on crates.io.
 
 The `rust/bump-version` template provides **Bump Version & Tag**. Run it on the
 default branch and choose an automatic, patch, minor, or major bump, defaulting
-to patch. The automatic option uses git-cliff and Conventional Commit messages
+to automatic. The automatic option uses git-cliff and Conventional Commit messages
 to choose the bump. The workflow calculates the next `X.Y.Z` version, updates
 the package version, preserves locked dependency versions, and pushes the commit
 and tag atomically. If git-cliff finds no unreleased changes, the workflow is a
