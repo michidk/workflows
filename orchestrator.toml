@@ -75,3 +75,6 @@ name = "michidk/shadcn-3d-viewer"
 
 [[repos]]
 name = "michidk/sticks-and-clay"
+
+[[repos]]
+name = "michidk/frndbook"

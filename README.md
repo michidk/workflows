@@ -226,6 +226,13 @@ annotations and failing the check when diagnostics remain. The command
 parameters are optional so repositories can keep their existing test,
 verification, and build commands.
 
+FRND BOOK uses the project-specific `projects/frndbook/ci` template. It preserves
+Prettier formatting alongside Biome and Expo ESLint, then checks types, licenses,
+Expo compatibility, book tests, web journeys, Storybook canvases, phone previews,
+and Android/iOS bundles. `fixtures/frndbook-ci.yml` covers rendering and linting
+of this template. The repository is listed in both `orchestrator.toml` and the
+sync workflow's App-token repository list.
+
 ## Python CI
 
 The `python/uv-ci` template uses a locked `uv sync`, runs pytest by default,
