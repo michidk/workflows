@@ -84,6 +84,12 @@ key as the `ORCASTRATE_PRIVATE_KEY` repository secret in `michidk/workflows`.
 ## Renovate
 
 Always place repository Renovate configuration at `.github/renovate.json5`.
+Remove root Renovate configs after preserving their repository-specific rules;
+Renovate reads the root config first and does not merge it with this file.
+For existing configs written as strict JSON, preview consolidation with
+`python3 scripts/migrate-renovate-config.py ../repository` and add `--write`
+to apply it. The script uses the shared preset and preserves local settings,
+with the existing `.github` settings taking precedence on conflicts.
 Create that file with the following content to use the shared preset:
 
 ```json5
