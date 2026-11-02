@@ -78,3 +78,6 @@ name = "michidk/sticks-and-clay"
 
 [[repos]]
 name = "michidk/frndbook"
+
+[[repos]]
+name = "michidk/roastbook-infra"

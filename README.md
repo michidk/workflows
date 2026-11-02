@@ -247,6 +247,24 @@ versions, QEMU/Buildx setup, metadata, registry login, and GitHub Actions cache.
 Application checks and multi-job digest assembly remain repository-owned when
 they need more than this basic publish path.
 
+## Roastbook CI
+
+`projects/roastbook/ci` preserves the self-hosted PostgreSQL integration suite,
+Docker and Helm validation, and multi-platform image build. It also verifies
+PostgreSQL and D1 migration drift, builds the database-free demo, checks browser
+asset boundaries for each edition, and runs real workerd tests for hosted
+ownership, concurrency, account jobs, and OAuth. Its fixture is
+`fixtures/roastbook-ci.yml`.
+
+`projects/roastbook-infra/verify` runs the private infrastructure repository's
+credential-free verification command with pinned Bun, Node, and OpenTofu tools.
+Concrete infrastructure and deployment controllers remain private. Its fixture
+is `fixtures/roastbook-infra-verify.yml`.
+
+Both repositories use `common/actionlint` for workflow and shell validation and
+`common/pr-title` for Conventional Commit titles. The actionlint template ignores
+only its pinned release's outdated warning about the valid `ubuntu-26.04` runner.
+
 ## Secret synchronization
 
 The manual **Sync Actions secrets** workflow uses `vars.SECRET_SYNC_APP_ID`

@@ -12,7 +12,7 @@
   },
   "customManagers": [{
     "customType": "regex",
-    "managerFilePatterns": ["/\\.github/workflows/.*\\.yml$/"],
+    "managerFilePatterns": ["/\\.github/workflows/.*\\.yml$/", "/^templates/.*\\.yml$/"],
     "matchStrings": ["github.com/rhysd/actionlint/cmd/actionlint@(?<currentValue>v[0-9.]+)"],
     "depNameTemplate": "rhysd/actionlint",
     "datasourceTemplate": "github-releases"
