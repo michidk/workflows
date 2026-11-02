@@ -100,6 +100,34 @@
         "helm-values"
       ],
       "groupName": "container images"
+    },
+    {
+      "description": "Group and automerge non-major development dependency updates after checks pass",
+      "matchDepTypes": [
+        "devDependencies",
+        "dev-dependencies"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "development dependencies",
+      "groupSlug": "dev-dependencies",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false,
+      "ignoreTests": false
+    },
+    {
+      "description": "Automerge dependency and digest pinning after checks pass",
+      "matchUpdateTypes": [
+        "pin",
+        "pinDigest"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false,
+      "ignoreTests": false
     }
   ],
   "lockFileMaintenance": {
