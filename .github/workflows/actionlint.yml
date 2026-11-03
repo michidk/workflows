@@ -36,7 +36,9 @@ jobs:
           done
 
       - name: Run actionlint
+        # GitHub supports concurrency.queue; actionlint 1.7.12 has not added it yet.
         run: >-
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           -ignore 'label "ubuntu-26\.04" is unknown'
+          -ignore '^unexpected key "queue" for "concurrency" section\.'
           .github/workflows/*.yml rendered/*.yml
