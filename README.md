@@ -250,8 +250,8 @@ they need more than this basic publish path.
 ## Roastbook CI
 
 `projects/roastbook/ci` preserves the PostgreSQL integration suite, Docker and
-Helm validation, migration drift checks, database-free demo, browser asset
-boundaries, and multi-platform image build. Its fixture is
+Helm validation, migration drift checks, browser asset boundaries, and
+multi-platform image build. The static demo has its own repository-owned workflow. Its fixture is
 `fixtures/roastbook-ci.yml`. Application checks remain project-specific.
 
 `projects/roastbook-infra/verify` runs the private infrastructure repository's
