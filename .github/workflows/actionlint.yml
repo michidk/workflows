@@ -44,6 +44,9 @@ jobs:
       - name: Test release version selection
         run: GIT_CLIFF="$RUNNER_TEMP/git-cliff/bin/git-cliff" python3 -m unittest discover -s tests
 
+      - name: Test dependent notification selection
+        run: node --test tests/notify-dependents.test.cjs
+
       - name: Run actionlint
         # GitHub supports concurrency.queue; actionlint 1.7.12 has not added it yet.
         run: >-

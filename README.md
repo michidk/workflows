@@ -305,3 +305,30 @@ GIT_CLIFF=/path/to/git-cliff python3 -m unittest discover -s tests
 
 Both Roastbook repositories consume this template, `common/actionlint`, and
 `common/pr-title`. The private deployment relay remains repository-owned.
+
+## Notify dependent repositories
+
+`common/notify-dependents` sends a `dependency-updated` repository dispatch after
+successful push CI for the current default-branch revision. It never checks out
+source code. The default `ci_name` is `Checks and Build`; `ci_workflow` defaults
+to `ci.yml`. Both can be set in Orcastrate frontmatter. The workflow validates
+the workflow ID, source repository, branch, revision and latest CI run before
+sending. Manual dispatch retries notification for the current tested revision.
+
+Set the source repository secret `DEPENDENT_REPOSITORY` to the destination's
+short repository name under the same owner. Keeping the destination in a secret
+avoids exposing private dependent names in public workflow files or logs. An
+unset destination disables notification. The existing `RELEASER_APP_ID` and
+`RELEASER_APP_PRIVATE_KEY` must belong to an App installed on the destination
+with Contents write permission, required for repository dispatch.
+
+The payload contains `repository` (`owner/name`), `revision` (full commit SHA),
+and `runId` (numeric source CI run ID). Receivers must independently verify the
+source CI and pin the immutable revision before building. How the dependent
+updates its source, calculates its version or deploys remains repository-owned.
+Install the receiver before enabling the sender. There is no automatic replay
+of missed events; use the sender's manual dispatch after setup or an outage.
+
+Fixtures cover default and custom CI names. `node --test
+tests/notify-dependents.test.cjs` exercises the selection script used in the
+rendered workflow, including failures, forks, stale events and manual retries.

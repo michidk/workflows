@@ -1,0 +1,6 @@
+# @orcastrate
+# template: common/notify-dependents
+# params:
+#   ci_name: Verify application
+#   ci_workflow: verify.yml
+# @end-orcastrate
