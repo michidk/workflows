@@ -35,6 +35,15 @@ jobs:
               orcastrate-validate render "$fixture" > "rendered/$(basename "$fixture")"
           done
 
+      - name: Install git-cliff for release tests
+        uses: orhun/git-cliff-action@a9a95522b26fe6403f7bb24031f21fb573d0f5ff # v4
+        with:
+          version: v2.14.2
+          args: --version
+
+      - name: Test release version selection
+        run: GIT_CLIFF="$RUNNER_TEMP/git-cliff/bin/git-cliff" python3 -m unittest discover -s tests
+
       - name: Run actionlint
         # GitHub supports concurrency.queue; actionlint 1.7.12 has not added it yet.
         run: >-

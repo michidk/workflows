@@ -1,0 +1,5 @@
+# @orcastrate
+# template: common/release
+# params:
+#   ci_workflow: verify.yml
+# @end-orcastrate

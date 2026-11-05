@@ -81,3 +81,6 @@ name = "michidk/frndbook"
 
 [[repos]]
 name = "michidk/roastbook-infra"
+
+[[repos]]
+name = "michidk/roastbook-cloud"

@@ -249,12 +249,10 @@ they need more than this basic publish path.
 
 ## Roastbook CI
 
-`projects/roastbook/ci` preserves the self-hosted PostgreSQL integration suite,
-Docker and Helm validation, and multi-platform image build. It also verifies
-PostgreSQL and D1 migration drift, builds the database-free demo, checks browser
-asset boundaries for each edition, and runs real workerd tests for hosted
-ownership, concurrency, account jobs, and OAuth. Its fixture is
-`fixtures/roastbook-ci.yml`.
+`projects/roastbook/ci` preserves the PostgreSQL integration suite, Docker and
+Helm validation, migration drift checks, database-free demo, browser asset
+boundaries, and multi-platform image build. Its fixture is
+`fixtures/roastbook-ci.yml`. Application checks remain project-specific.
 
 `projects/roastbook-infra/verify` runs the private infrastructure repository's
 credential-free verification command with pinned Bun, Node, and OpenTofu tools.
@@ -273,3 +271,37 @@ in `vars.RELEASER_APP_ID` and `secrets.RELEASER_APP_PRIVATE_KEY`. It defaults
 to a dry run and only targets the explicit repository and secret allowlists in
 `.github/workflows/sync-secrets.yml`.
 The App needs repository **Secrets: read and write** permission.
+
+## Web application releases
+
+`common/release` provides **Release**, dispatched on the default branch with
+`bump_type` set to `auto`, `patch`, `minor`, or `major`. It requires the latest
+push run of `ci_workflow` (default `ci.yml`) for the dispatch revision to have
+succeeded. It tags that exact tested commit and publishes a GitHub release with
+git-cliff notes. It does not change package manifests or create version commits.
+The tag is the application release version.
+
+Each consumer owns `cliff.toml`, including its initial version and pre-1.0 bump
+policy. Roastbook starts at `v0.1.0`, bumps features to a minor release and
+breaking changes to a major release, including before 1.0. Explicit bump choices
+override commit inference and start from `v0.0.0` before the first tag. Automatic
+mode skips histories without unreleased changelog entries. Rerunning for an already tagged revision resumes an
+incomplete release or leaves the published release unchanged. Tags never move.
+Run again after CI succeeds if preparation fails its CI gate.
+
+Configure `RELEASER_APP_ID` and `RELEASER_APP_PRIVATE_KEY`, with the Releaser App
+installed on the consumer and Contents write permission. Release publication
+uses the App token so downstream tag and release workflows run. The shared
+secret-sync allowlist includes both Roastbook repositories; the Secret Sync App
+also needs access to both. The Orcastrate App needs access before syncing their
+managed files.
+
+`fixtures/common-release.yml` covers the default template. Version-selection
+behavior is tested with real temporary Git histories and git-cliff 2.14.2:
+
+```sh
+GIT_CLIFF=/path/to/git-cliff python3 -m unittest discover -s tests
+```
+
+Both Roastbook repositories consume this template, `common/actionlint`, and
+`common/pr-title`. The private deployment relay remains repository-owned.
