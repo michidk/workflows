@@ -110,6 +110,13 @@ handles Bun projects; Rust dependencies use the Cargo manager. Major updates
 remain outside these groups. Lockfile maintenance runs before 04:00 UTC
 on Mondays and automerges after checks pass.
 
+Libraries extend `github>michidk/workflows//templates/presets/renovate-library`
+instead. It builds on the shared preset but keeps compatible version ranges
+(`^1.2`, `0.25.1`) rather than pinning exact versions, so projects that depend
+on the library can share dependency versions with it. Peer dependency ranges
+are widened on major updates, and the lockfile still pins the versions CI tests.
+Applications keep the shared preset, which pins development dependencies.
+
 For a fork you maintain, also set `"forkProcessing": "enabled"` in that
 repository's `.github/renovate.json5`. Renovate otherwise skips forks when the App has
 access to all repositories.

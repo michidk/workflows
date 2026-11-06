@@ -1,0 +1,15 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>michidk/workflows//templates/presets/renovate"
+  ],
+  "packageRules": [
+    {
+      "description": "Keep compatible ranges in libraries so consumers can share dependency versions; the lockfile still pins what CI tests",
+      "matchPackageNames": [
+        "*"
+      ],
+      "rangeStrategy": "auto"
+    }
+  ]
+}
