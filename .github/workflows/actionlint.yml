@@ -49,5 +49,6 @@ jobs:
         run: >-
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           -ignore 'label "ubuntu-26\.04" is unknown'
+          -ignore 'label "ubicloud-[a-z0-9-]+" is unknown'
           -ignore '^unexpected key "queue" for "concurrency" section\.'
           .github/workflows/*.yml rendered/*.yml
