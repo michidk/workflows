@@ -19,7 +19,7 @@ defaults:
 jobs:
   test:
     name: Test Suite
-    runs-on: ${{ "{{ matrix.os }}" }}
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}${{ "{{ matrix.os }}" }}{% endif %}
     strategy:
       matrix:
         os: {{ test_os | default(value=["ubuntu-26.04"]) }}
@@ -66,7 +66,7 @@ jobs:
 
   lints:
     name: Lints
-    runs-on: {{ runner_os | default(value="ubuntu-26.04") }}
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}{{ runner_os | default(value="ubuntu-26.04") }}{% endif %}
     steps:
       - name: Checkout sources
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-latest{% endif %}
     timeout-minutes: 20
     services:
       postgres:
@@ -82,7 +82,7 @@ jobs:
           - platform: linux/arm64
             arch: arm64
             runner: ubuntu-24.04-arm
-    runs-on: ${{ "{{ matrix.runner }}" }}
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}${{ "{{ matrix.runner }}" }}{% endif %}
     timeout-minutes: 30
     needs: checks
     permissions:
@@ -138,7 +138,7 @@ jobs:
   merge:
     name: publish multi-platform image
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-latest{% endif %}
     timeout-minutes: 10
     needs: build
     permissions:

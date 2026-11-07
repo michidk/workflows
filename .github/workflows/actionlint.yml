@@ -41,7 +41,9 @@ jobs:
           version: v2.14.2
           args: --version
 
-      - name: Test release version selection
+      - name: Test release versions and runner selection
+        env:
+          ORCASTRATE: docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace orcastrate-validate
         run: GIT_CLIFF="$RUNNER_TEMP/git-cliff/bin/git-cliff" python3 -m unittest discover -s tests
 
       - name: Run actionlint

@@ -25,7 +25,7 @@ defaults:
 jobs:
   bump:
     name: Bump version and tag
-    runs-on: ubuntu-24.04
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-24.04{% endif %}
     steps:
       - name: Create release App token
         id: release-token

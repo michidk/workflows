@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   checks:
-    runs-on: ubuntu-latest
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-latest{% endif %}
     timeout-minutes: 20
     services:
       postgres:
@@ -150,7 +150,7 @@ jobs:
         run: bun run check:pwa
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-latest{% endif %}
     timeout-minutes: 30
     needs: checks
     permissions:

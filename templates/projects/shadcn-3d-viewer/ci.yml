@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   package:
-    runs-on: ubuntu-latest
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-latest{% endif %}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -30,7 +30,7 @@ jobs:
         run: bun run check:package
 
   browser:
-    runs-on: ubuntu-latest
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-latest{% endif %}
     timeout-minutes: 25
     strategy:
       fail-fast: false

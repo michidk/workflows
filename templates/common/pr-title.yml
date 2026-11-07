@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   lint:
-    runs-on: ubuntu-26.04
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-26.04{% endif %}
     permissions:
       pull-requests: read
       statuses: write

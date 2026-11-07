@@ -73,6 +73,47 @@ GitHub expressions in templates must escape Tera expressions. For example:
 TAG_NAME: ${{ "{{ github.ref_name }}" }}
 ```
 
+## Runner selection
+
+Every workflow template defaults to GitHub-hosted runners. To override every
+job in a managed workflow, set `custom_runner` in its Orcastrate frontmatter:
+
+```yaml
+# @orcastrate
+# template: common/actionlint
+# params:
+#   custom_runner: ubicloud-standard-2
+# @end-orcastrate
+```
+
+The parameter accepts a runner label, a label list such as
+`[self-hosted, linux, x64]`, or a GitHub Actions expression. Orcastrate preserves
+this frontmatter during sync, so subsequent template updates keep the override.
+Omit `custom_runner` to keep each job's default selection. Existing `runner_os`,
+`test_os`, and release `targets[].os` parameters still work when it is omitted.
+
+`custom_runner` takes precedence over all of those settings, including matrix
+jobs. The runner must support each job's commands, operating system, and CPU
+architecture. For native multi-architecture builds, use an expression to select
+matching runners, for example in `projects/codetend/ci`:
+
+```yaml
+#   custom_runner: "${{ contains(toJSON(matrix), 'linux/amd64') && 'ubicloud-standard-2' || 'ubicloud-standard-2-arm' }}"
+```
+
+That expression also selects ARM for jobs without `matrix.platform`, matching
+CodeTend's default checks and merge architecture. For mixed Windows, macOS, and
+Linux workflows, preserve platform-specific selection or provide an expression
+that maps each matrix entry to a compatible runner.
+
+When using custom labels, list them under `self-hosted-runner.labels` in the
+consumer's `.github/actionlint.yaml` so actionlint recognizes them:
+
+```yaml
+self-hosted-runner:
+  labels: [ubicloud-standard-2, ubicloud-standard-2-arm]
+```
+
 ## Authentication
 
 The sync workflow authenticates with the `michidk-orcastrate` GitHub App. Its
@@ -307,7 +348,7 @@ managed files.
 behavior is tested with real temporary Git histories and git-cliff 2.14.2:
 
 ```sh
-GIT_CLIFF=/path/to/git-cliff python3 -m unittest discover -s tests
+ORCASTRATE=/path/to/orcastrate GIT_CLIFF=/path/to/git-cliff python3 -m unittest discover -s tests
 ```
 
 Both Roastbook repositories consume this template, `common/actionlint`, and

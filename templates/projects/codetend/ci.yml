@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   checks:
-    runs-on: ubicloud-standard-2-arm
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-24.04-arm{% endif %}
     timeout-minutes: 30
     services:
       postgres:
@@ -123,7 +123,7 @@ jobs:
   # single-platform digests into one multi-arch manifest, per Docker's
   # documented pattern for distributing builds across runners.
   build:
-    runs-on: ${{ "{{ matrix.platform == 'linux/amd64' && 'ubicloud-standard-2' || 'ubicloud-standard-2-arm' }}" }}
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}${{ "{{ matrix.platform == 'linux/amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}" }}{% endif %}
     timeout-minutes: 45
     needs: checks
     permissions:
@@ -193,7 +193,7 @@ jobs:
 
   merge:
     if: github.event_name != 'pull_request'
-    runs-on: ubicloud-standard-2-arm
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-24.04-arm{% endif %}
     timeout-minutes: 15
     needs: build
     permissions:
@@ -241,6 +241,8 @@ jobs:
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
+          # Split generated tags and digest references into separate arguments.
+          # shellcheck disable=SC2046
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             $(printf '${{ "{{ env.REGISTRY }}" }}/${{ "{{ env.IMAGE_NAME }}" }}${{ "{{ matrix.suffix }}" }}@sha256:%s ' *)
 

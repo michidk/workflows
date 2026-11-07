@@ -22,7 +22,7 @@ env:
 jobs:
   checks:
     name: Format, lint, types, licenses, and unit tests
-    runs-on: ubicloud-standard-2
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-24.04{% endif %}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -46,7 +46,7 @@ jobs:
   web:
     name: Web journeys, Storybook, and phone preview
     needs: checks
-    runs-on: ubicloud-standard-2
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-24.04{% endif %}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -89,7 +89,7 @@ jobs:
   native:
     name: Native bundles (${{ "{{ matrix.platform }}" }})
     needs: checks
-    runs-on: ubicloud-standard-2
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-24.04{% endif %}
     timeout-minutes: 20
     strategy:
       fail-fast: false

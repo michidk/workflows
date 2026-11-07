@@ -1,0 +1,5 @@
+# @orcastrate
+# template: common/actionlint
+# params:
+#   custom_runner: ubicloud-standard-2
+# @end-orcastrate

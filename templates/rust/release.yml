@@ -27,7 +27,7 @@ env:
 jobs:
   verify:
     name: Verify release
-    runs-on: {{ runner_os | default(value="ubuntu-26.04") }}
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}{{ runner_os | default(value="ubuntu-26.04") }}{% endif %}
     timeout-minutes: 20
     steps:
       - name: Validate release tag and publishing token
@@ -72,7 +72,7 @@ jobs:
   build:
     name: Build (${{ "{{ matrix.target }}" }})
     needs: verify
-    runs-on: ${{ "{{ matrix.os }}" }}
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}${{ "{{ matrix.os }}" }}{% endif %}
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -154,7 +154,7 @@ jobs:
   release:
     name: Create GitHub release
     needs: {% if library_only %}verify{% else %}build{% endif %}
-    runs-on: ubuntu-26.04
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-26.04{% endif %}
     timeout-minutes: 10
     permissions:
       contents: write

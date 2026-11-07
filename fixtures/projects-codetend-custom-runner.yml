@@ -1,0 +1,5 @@
+# @orcastrate
+# template: projects/codetend/ci
+# params:
+#   custom_runner: "${{ contains(toJSON(matrix), 'linux/amd64') && 'ubicloud-standard-2' || 'ubicloud-standard-2-arm' }}"
+# @end-orcastrate

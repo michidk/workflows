@@ -17,7 +17,7 @@ defaults:
 jobs:
   checks:
     name: Checks
-    runs-on: {{ runner_os | default(value="ubuntu-24.04") }}
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}{{ runner_os | default(value="ubuntu-24.04") }}{% endif %}
     timeout-minutes: {{ timeout_minutes | default(value=20) }}
     steps:
       - name: Checkout sources

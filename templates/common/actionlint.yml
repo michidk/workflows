@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   actionlint:
-    runs-on: ubuntu-26.04
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-26.04{% endif %}
     timeout-minutes: 10
     steps:
       - name: Checkout workflow sources

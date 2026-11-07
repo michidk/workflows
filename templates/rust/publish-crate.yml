@@ -29,7 +29,7 @@ defaults:
 jobs:
   validate-tag:
     name: Validate selected tag
-    runs-on: ubuntu-26.04
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-26.04{% endif %}
     steps:
       - name: Require a release tag
         run: |
@@ -43,7 +43,7 @@ jobs:
   publish-cratesio:
     name: Publish to crates.io
     needs: validate-tag
-    runs-on: {{ runner_os | default(value="ubuntu-26.04") }}
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}{{ runner_os | default(value="ubuntu-26.04") }}{% endif %}
     environment: publish-crates.io
     steps:
       - name: Checkout repository

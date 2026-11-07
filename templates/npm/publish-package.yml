@@ -25,7 +25,7 @@ env:
 jobs:
   validate-tag:
     name: Validate selected tag
-    runs-on: ubuntu-24.04
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-24.04{% endif %}
     steps:
       - name: Require a release tag
         run: |
@@ -40,7 +40,7 @@ jobs:
     name: Publish package
     needs: validate-tag
     if: ${{ "{{ github.event_name != 'release' || !github.event.release.prerelease }}" }}
-    runs-on: {{ runner_os | default(value="ubuntu-24.04") }}
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}{{ runner_os | default(value="ubuntu-24.04") }}{% endif %}
 {% if environment | default(value="") != "" %}    environment: {{ environment }}
 {% endif %}    steps:
       - name: Checkout release sources
