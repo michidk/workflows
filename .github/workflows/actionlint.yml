@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: michidk/orcastrate
-          ref: 2edd9f720024ada79251716e454ff23e860f0ecc # renovate: datasource=git-refs depName=https://github.com/michidk/orcastrate currentValue=main
+          ref: 33bf30bfac60bb0abbc5f50921def1954f3f51cc # renovate: datasource=git-refs depName=https://github.com/michidk/orcastrate currentValue=main
           path: orcastrate-source
 
       - name: Build pinned Orcastrate
