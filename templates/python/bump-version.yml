@@ -29,19 +29,19 @@ jobs:
     steps:
       - name: Create release App token
         id: release-token
-        uses: actions/create-github-app-token@0f859bf9e69e887678d5bbfbee594437cb440ffe # v2.1.0
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         with:
           app-id: ${{ "{{ secrets.RELEASER_APP_ID }}" }}
           private-key: ${{ "{{ secrets.RELEASER_APP_PRIVATE_KEY }}" }}
           owner: ${{ "{{ github.repository_owner }}" }}
           repositories: ${{ "{{ github.event.repository.name }}" }}
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           token: ${{ "{{ steps.release-token.outputs.token }}" }}
       - name: Install Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
       - name: Get current version
