@@ -17,7 +17,8 @@ Template changes do not modify target repositories directly.
 
 ## Repository layout
 
-- `orchestrator.toml` lists the managed repositories.
+- `orchestrator.toml` holds the Orcastrate settings. The managed repositories are not listed
+  in this public repository; see [Repository lists](#repository-lists).
 - `templates/` contains the canonical Tera workflow templates and Renovate preset.
 - `.github/workflows/sync.yml` runs Orcastrate.
 
@@ -32,21 +33,47 @@ templates/
   rust/     # Rust CI, release, publishing, and version bump workflows
   presets/  # reusable configuration files, such as Renovate
 ```
+
 - `.github/workflows/actionlint.yml` validates this repository.
+
+## Repository lists
+
+This repository and its Actions logs are public, while some managed repositories
+are private, so repository names are kept out of the code. Each owner has a
+repository secret holding its `[[repos]]` tables, in the same format as
+Orcastrate's `orchestrator.toml`:
+
+| Secret                          | Owner          |
+| ------------------------------- | -------------- |
+| `ORCASTRATE_REPOS`              | `michidk`      |
+| `ORCASTRATE_REPOS_FRNDBOOK_DEV` | `frndbook-dev` |
+
+`sync.yml` appends each secret to `orchestrator.toml` at run time and masks every
+repository name in the logs. A secret is used instead of a variable because
+variables are not masked. An App token covers one installation, so each owner has
+its own token and Orcastrate step; onboarding another owner means installing the
+App there, adding a secret, and adding both steps. The tokens are not limited to
+named repositories: Orcastrate only changes repositories from the list, and the
+App installation controls the rest.
+
+Do not list repository names in this repository's files, commit messages, or
+pull requests. Template names under `templates/projects/` and fixtures still
+mention the projects they belong to.
 
 ## Onboard a repository
 
 1. Open the `michidk-orcastrate` GitHub App installation and add the new
    repository. Grant the App read and write access to **Contents**, **Pull
    requests**, and **Workflows**.
-3. Add the repository to `orchestrator.toml`:
+2. Add the repository to the matching repository-list secret (see
+   [Repository lists](#repository-lists)):
 
    ```toml
    [[repos]]
    name = "michidk/example"
    ```
 
-4. Add the initial managed workflow under `.github/workflows/` in the target
+3. Add the initial managed workflow under `.github/workflows/` in the target
    repository. Copy an existing workflow that uses the required template and
    keep its Orcastrate frontmatter:
 
@@ -58,10 +85,10 @@ templates/
    # The rendered workflow starts here and must be valid GitHub Actions YAML.
    ```
 
-5. Merge the initial workflow into the target repository's default branch.
+4. Merge the initial workflow into the target repository's default branch.
    Orcastrate discovers existing workflow files but does not create the first
    file.
-6. Run **Sync workflows** manually in this repository. Orcastrate opens a pull
+5. Run **Sync workflows** manually in this repository. Orcastrate opens a pull
    request if the initial workflow differs from its template.
 
 Orcastrate preserves the frontmatter and manages the complete file below it.
@@ -278,8 +305,7 @@ FRND BOOK uses the project-specific `projects/frndbook/ci` template. It preserve
 Prettier formatting alongside Biome and Expo ESLint, then checks types, licenses,
 Expo compatibility, book tests, web journeys, Storybook canvases, phone previews,
 and Android/iOS bundles. `fixtures/frndbook-ci.yml` covers rendering and linting
-of this template. The repository is listed in both `orchestrator.toml` and the
-sync workflow's App-token repository list.
+of this template. The repository is listed in the `ORCASTRATE_REPOS_FRNDBOOK_DEV` secret.
 
 ## Python CI
 

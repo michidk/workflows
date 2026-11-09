@@ -28,7 +28,9 @@ jobs:
 
       - name: Validate and render templates
         run: |
-          docker run --rm -v "$GITHUB_WORKSPACE:/workspace" -w /workspace orcastrate-validate validate
+          # The committed config lists no repositories; validate with a placeholder.
+          { cat orchestrator.toml; printf '\n[[repos]]\nname = "example/example"\n'; } > validate.toml
+          docker run --rm -v "$GITHUB_WORKSPACE:/workspace" -w /workspace orcastrate-validate --config validate.toml validate
           mkdir -p rendered
           for fixture in fixtures/*.yml; do
             docker run --rm -v "$GITHUB_WORKSPACE:/workspace" -w /workspace \

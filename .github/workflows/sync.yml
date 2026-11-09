@@ -20,6 +20,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      # Repository names are secrets: this repository and its logs are public, and some
+      # managed repositories are private. Each secret holds [[repos]] tables for one owner.
+      - name: Build Orcastrate configs from secrets
+        env:
+          MICHIDK_REPOS: ${{ secrets.ORCASTRATE_REPOS }}
+          FRNDBOOK_DEV_REPOS: ${{ secrets.ORCASTRATE_REPOS_FRNDBOOK_DEV }}
+        run: |
+          set -euo pipefail
+          mkdir -p .orcastrate
+          build() {
+            if [[ -z "$2" ]]; then echo "::error::The $1 repository secret is empty."; exit 1; fi
+            grep -oP 'name = "\K[^"]+' <<< "$2" | while read -r repo; do echo "::add-mask::$repo"; done
+            { cat orchestrator.toml; printf '\n%s\n' "$2"; } > ".orcastrate/$3.toml"
+          }
+          build ORCASTRATE_REPOS "$MICHIDK_REPOS" michidk
+          build ORCASTRATE_REPOS_FRNDBOOK_DEV "$FRNDBOOK_DEV_REPOS" frndbook-dev
+
       - name: Create Orcastrate App token
         id: app-token
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
@@ -27,37 +44,25 @@ jobs:
           app-id: ${{ vars.ORCASTRATE_APP_ID }}
           private-key: ${{ secrets.ORCASTRATE_PRIVATE_KEY }}
           owner: michidk
-          repositories: |
-            redguard-preservation
-            vscli
-            bitmap2ttf
-            displayz
-            off-rs
-            wslpath2
-            cyrus
-            hodor
-            shimesu
-            fitsim
-            shottimer
-            rost
-            tcplex
-            brewscale-rs
-            divecalc
-            icecheck
-            liftosaur2garmin
-            CodeTend
-            brewscale-web
-            divetracx
-            miseshare
-            roastbook
-            roastbook-cloud
-            roastbook-infra
-            frndbook
-            shadcn-3d-viewer
-            sticks-and-clay
 
       - name: Run Orcastrate
         uses: michidk/orcastrate@2be0c85998bacb0649a3549c07fbcb2230d446c3 # main
         with:
+          config: .orcastrate/michidk.toml
           orcastrate-token: ${{ steps.app-token.outputs.token }}
           github-token: ${{ steps.app-token.outputs.token }}
+
+      - name: Create Orcastrate App token for frndbook-dev
+        id: frndbook-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          app-id: ${{ vars.ORCASTRATE_APP_ID }}
+          private-key: ${{ secrets.ORCASTRATE_PRIVATE_KEY }}
+          owner: frndbook-dev
+
+      - name: Run Orcastrate for frndbook-dev
+        uses: michidk/orcastrate@2be0c85998bacb0649a3549c07fbcb2230d446c3 # main
+        with:
+          config: .orcastrate/frndbook-dev.toml
+          orcastrate-token: ${{ steps.frndbook-token.outputs.token }}
+          github-token: ${{ steps.frndbook-token.outputs.token }}
