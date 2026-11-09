@@ -34,7 +34,7 @@ jobs:
           mkdir -p rendered
           for fixture in fixtures/*.yml; do
             docker run --rm -v "$GITHUB_WORKSPACE:/workspace" -w /workspace \
-              orcastrate-validate render "$fixture" > "rendered/$(basename "$fixture")"
+              orcastrate-validate --config validate.toml render "$fixture" > "rendered/$(basename "$fixture")"
           done
 
       - name: Install git-cliff for release tests
@@ -45,7 +45,7 @@ jobs:
 
       - name: Test release versions and runner selection
         env:
-          ORCASTRATE: docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace orcastrate-validate
+          ORCASTRATE: docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace orcastrate-validate --config validate.toml
         run: GIT_CLIFF="$RUNNER_TEMP/git-cliff/bin/git-cliff" python3 -m unittest discover -s tests
 
       - name: Run actionlint
