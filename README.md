@@ -311,6 +311,59 @@ Both repositories use `common/actionlint` for workflow and shell validation and
 `common/pr-title` for Conventional Commit titles. The actionlint template ignores
 only its pinned release's outdated warning about the valid `ubuntu-26.04` runner.
 
+## Repository settings prototype
+
+The manual **Sync repository settings (prototype)** workflow uses
+[gh-settings](https://github.com/noirbizarre/gh-settings) to distribute
+`settings/common.yml` to exactly the repositories listed in `orchestrator.toml`.
+It reads the inventory on each run, including repositories with a nonstandard
+default branch. No consumer workflow or settings file is required.
+
+The baseline enables squash merges with the PR title and body as the commit
+message, deletes merged branches, allows updating PR branches, defaults Actions
+tokens to read access, and prevents workflow tokens from approving PRs.
+Existing merge and rebase options remain available. Explicit workflow permissions
+continue to override the default token permissions.
+
+The prototype leaves visibility, default branches, security products, branch
+rules, labels, topics, environments, and Actions retention unmanaged. Those
+settings need repository-specific decisions or depend on GitHub plan support.
+Pruning is disabled. Squash commit bodies retain PR text, but contributors must
+still include the required co-author trailers in the PR body.
+
+### Setup and trial
+
+1. Give the existing Orcastrate GitHub App **Administration: read and write**
+   access and accept the installation permission update for the managed repos.
+   This expands the App's privileges beyond workflow synchronization. A dedicated
+   settings App can replace it later if those credentials should be separated.
+   The existing `ORCASTRATE_APP_ID` variable and `ORCASTRATE_PRIVATE_KEY` secret
+   are reused. The workflow requests a token scoped to one target repository.
+2. Merge this prototype into the default branch. It deliberately refuses runs
+   from other branches and has no push or scheduled trigger.
+3. Run the workflow with `command: plan` and one inventory repository such as
+   `michidk/vscli`. Review its job summary. Pending changes are reported as drift,
+   not workflow failure. Permission and API errors fail the target job.
+4. Run with `command: sync` and the same repository to apply the baseline.
+   This changes GitHub settings directly; it does not open an Orcastrate PR.
+5. Run `plan` again to check convergence. Leave `repository` empty to plan or
+   apply across the full Orcastrate inventory. Targets run independently, two
+   at a time. A failure does not cancel the other repositories.
+
+Both the upstream action and extension are pinned to gh-settings 0.3.0.
+This is a trial baseline; repository overrides and automatic enforcement are
+not implemented. Before a fleet apply, check every plan for repos that rely on
+workflow approval or default write permissions. To undo an applied value, set
+its previous value in the baseline and sync the affected repository. Removing
+a key stops managing it and does not restore the previous value.
+
+Preview the target inventory locally without credentials:
+
+```sh
+python3 scripts/settings-matrix.py
+python3 scripts/settings-matrix.py --repository michidk/vscli
+```
+
 ## Secret synchronization
 
 The manual **Sync Actions secrets** workflow uses `vars.SECRET_SYNC_APP_ID`
