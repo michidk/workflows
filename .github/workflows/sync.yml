@@ -35,6 +35,8 @@ jobs:
             { cat orchestrator.toml; printf '\n%s\n' "$2"; } > ".orcastrate/$3.toml"
           }
           build ORCASTRATE_REPOS "$MICHIDK_REPOS" michidk
+          # Public consumer; keep it out of the other owner installation config.
+          printf '\n[[repos]]\nname = "michidk/maiko"\n' >> .orcastrate/michidk.toml
           build ORCASTRATE_REPOS_FRNDBOOK_DEV "$FRNDBOOK_DEV_REPOS" frndbook-dev
 
       - name: Create Orcastrate App token

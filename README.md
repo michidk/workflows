@@ -379,3 +379,10 @@ ORCASTRATE=/path/to/orcastrate GIT_CLIFF=/path/to/git-cliff python3 -m unittest 
 
 Both Roastbook repositories consume this template, `common/actionlint`, and
 `common/pr-title`. The private deployment relay remains repository-owned.
+
+
+### Maiko
+
+`templates/projects/maiko/` manages the source checks, reusable browser build, Pages deployment, signed version bump and release pipeline. The consumer uses local reusable workflow calls so a release checks and packages its tagged source. Releases distribute Windows/Linux patcher CLIs, the static browser builder, checked support kits and checksums. They never build or upload game-derived packages.
+
+Maiko is registered explicitly in the michidk sync configuration, rather than the shared base configuration used by both owner installations. It is also included in the release-App secret synchronization allowlist. After merging onboarding changes, run **Sync Actions secrets** with `dry_run=true`, confirm that the App installations include Maiko, then run with `dry_run=false` to enable version bumps. No credentials belong in consumer source or the browser distribution.

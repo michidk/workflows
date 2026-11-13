@@ -1,0 +1,79 @@
+name: Bump version and tag
+on:
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: Version increment
+        type: choice
+        default: patch
+        options: [patch, minor, major]
+permissions:
+  contents: read
+concurrency:
+  group: bump-version
+  cancel-in-progress: false
+jobs:
+  bump:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        id: token
+        with:
+          app-id: ${{ "{{ secrets.RELEASER_APP_ID }}" }}
+          private-key: ${{ "{{ secrets.RELEASER_APP_PRIVATE_KEY }}" }}
+          owner: ${{ "{{ github.repository_owner }}" }}
+          repositories: ${{ "{{ github.event.repository.name }}" }}
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          token: ${{ "{{ steps.token.outputs.token }}" }}
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: '1.90.0'
+      - uses: taiki-e/install-action@cfdb7ed4ccc7c7dce37759eae89dc5674b469b39 # v2
+        with:
+          tool: cargo-edit@0.13.13
+      - name: Update all package versions
+        env:
+          BUMP: ${{ "{{ inputs.bump_type }}" }}
+        run: |
+          set -euo pipefail
+          current=$(cargo metadata --no-deps --locked --format-version 1 | jq -er '[.packages[].version] | unique | if length == 1 then .[0] else error("package versions differ") end')
+          [[ "$current" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          IFS=. read -r major minor patch <<< "$current"
+          case "$BUMP" in
+            patch) ((patch += 1));;
+            minor) ((minor += 1)); patch=0;;
+            major) ((major += 1)); minor=0; patch=0;;
+            *) exit 1;;
+          esac
+          version="$major.$minor.$patch"
+          cargo set-version --workspace "$version"
+          cargo update --workspace
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+      - name: Publish signed version commit and tag
+        env:
+          GH_TOKEN: ${{ "{{ steps.token.outputs.token }}" }}
+        run: |
+          set -euo pipefail
+          head=$(git rev-parse HEAD)
+          tag="v$VERSION"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" >/dev/null 2>&1; then
+            echo '::error::Version tag already exists.'
+            exit 1
+          fi
+          files='[]'
+          for file in Cargo.toml Cargo.lock patcher/Cargo.toml runtime/host/Cargo.toml runtime/glide/Cargo.toml; do
+            content=$(base64 -w0 "$file")
+            files=$(jq -c --arg path "$file" --arg contents "$content" '. + [{path:$path,contents:$contents}]' <<< "$files")
+          done
+          body=$'Co-authored-by: Michael Lohr <michael@lohr.dev>\nCo-authored-by: Codex <codex@openai.com>'
+          jq -n --arg repository "$GITHUB_REPOSITORY" --arg head "$head" --arg title "chore(release): $tag" --arg body "$body" --argjson additions "$files" \
+            '{query:"mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid } } }",variables:{input:{branch:{repositoryNameWithOwner:$repository,branchName:"main"},expectedHeadOid:$head,message:{headline:$title,body:$body},fileChanges:{additions:$additions}}}}' > "$RUNNER_TEMP/commit.json"
+          oid=$(gh api graphql --input "$RUNNER_TEMP/commit.json" --jq '.data.createCommitOnBranch.commit.oid')
+          [[ "$oid" =~ ^[a-f0-9]{40}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/commits/$oid" > "$RUNNER_TEMP/published.json"
+          jq -e '.commit.verification.verified == true and (.commit.message | contains("Co-authored-by: Michael Lohr <michael@lohr.dev>")) and (.commit.message | contains("Co-authored-by: Codex <codex@openai.com>"))' "$RUNNER_TEMP/published.json"
+          gh api "repos/$GITHUB_REPOSITORY/git/refs" -f ref="refs/tags/$tag" -f sha="$oid"

@@ -1,0 +1,159 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ "{{ github.ref }}" }}
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ "{{ steps.version.outputs.tag }}" }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - name: Verify stable version tag on main
+        id: version
+        run: |
+          [[ "$GITHUB_REF" =~ ^refs/tags/v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] || { echo '::error::Select a stable vX.Y.Z tag.'; exit 1; }
+          git merge-base --is-ancestor HEAD origin/main
+          version="${GITHUB_REF_NAME#v}"
+          for manifest in Cargo.toml patcher/Cargo.toml runtime/host/Cargo.toml runtime/glide/Cargo.toml; do
+            actual=$(python3 -c 'import sys,tomllib; print(tomllib.load(open(sys.argv[1],"rb"))["package"]["version"])' "$manifest")
+            test "$actual" = "$version"
+          done
+          echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+  verify:
+    needs: version
+    uses: ./.github/workflows/ci.yml
+  web:
+    needs: version
+    uses: ./.github/workflows/web.yml
+    with:
+      pages_artifact: false
+  native:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            platform: linux-x86_64
+            executable: maiko-patcher
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: windows-x86_64
+            executable: maiko-patcher.exe
+    runs-on: ${{ "{{ matrix.os }}" }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          toolchain: '1.90.0'
+          targets: ${{ "{{ matrix.target }}" }}
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2
+        with:
+          key: ${{ "{{ matrix.target }}" }}
+      - name: Build and test standalone patcher
+        env:
+          TARGET: ${{ "{{ matrix.target }}" }}
+          EXECUTABLE: ${{ "{{ matrix.executable }}" }}
+          PLATFORM: ${{ "{{ matrix.platform }}" }}
+        run: |
+          cargo test -p maiko-patcher --locked --target "$TARGET"
+          cargo build -p maiko-patcher --bin maiko-patcher --release --locked --target "$TARGET"
+          mkdir package
+          cp "target/$TARGET/release/$EXECUTABLE" package/
+          cp LICENSE docs/client-builder.md package/
+          tar -czf "maiko-patcher-$PLATFORM.tar.gz" -C package .
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: patcher-${{ "{{ matrix.platform }}" }}
+          path: maiko-patcher-*.tar.gz
+          if-no-files-found: error
+  publish:
+    needs: [version, verify, web, native]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: patcher-*
+          path: release
+          merge-multiple: true
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: browser
+          path: release
+      - name: Collect exactly the verified support kits
+        run: |
+          mkdir browser
+          tar -xzf release/maiko-browser.tar.gz -C browser
+          cp browser/kits/linux.zip release/maiko-runtime-kit-linux.zip
+          cp browser/kits/windows.zip release/maiko-runtime-kit-windows.zip
+          cp LICENSE release/LICENSE
+          cp docs/client-builder.md release/README.md
+          cd release
+          sha256sum maiko-* LICENSE README.md > SHA256SUMS
+      - uses: orhun/git-cliff-action@a9a95522b26fe6403f7bb24031f21fb573d0f5ff # v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header --output release-notes.md
+      - name: Publish complete release
+        env:
+          GH_TOKEN: ${{ "{{ github.token }}" }}
+          TAG: ${{ "{{ needs.version.outputs.tag }}" }}
+        run: |
+          if gh release view "$TAG" --json isDraft --jq '.isDraft' > draft-state; then
+            if [[ $(cat draft-state) != true ]]; then
+              echo 'Release already published; keeping existing assets.'
+            else
+              gh release upload "$TAG" release/* --clobber
+              gh release edit "$TAG" --draft=false --notes-file release-notes.md
+            fi
+          else
+            gh release create "$TAG" --verify-tag --draft --title "Maiko $TAG" --notes-file release-notes.md
+            gh release upload "$TAG" release/* --clobber
+            gh release edit "$TAG" --draft=false --notes-file release-notes.md
+          fi
+      - name: Prepare the published browser for deployment
+        env:
+          GH_TOKEN: ${{ "{{ github.token }}" }}
+          TAG: ${{ "{{ needs.version.outputs.tag }}" }}
+        run: |
+          mkdir published published-site
+          gh release download "$TAG" --pattern maiko-browser.tar.gz --pattern SHA256SUMS --dir published
+          (cd published && sha256sum --check --ignore-missing SHA256SUMS)
+          tar -xzf published/maiko-browser.tar.gz -C published-site
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+        with:
+          path: published-site
+  deploy:
+    needs: [publish, web]
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ "{{ steps.deployment.outputs.page_url }}" }}
+    steps:
+      - uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5
+        id: deployment
