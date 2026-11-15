@@ -1,15 +1,21 @@
-name: Test & Build
+{% set package_manager = package_manager | default(value="bun") %}{% set biome = biome | default(value=true) %}name: {{ name | default(value="Test & Build") }}
 
 on:
   pull_request:
   push:
     branches: [main]
-
+{% if image is defined %}    tags: ["v*"]
+  workflow_dispatch:
+{% endif %}
 permissions:
   contents: read
-  checks: write
- 
-
+{% if biome %}  checks: write
+{% endif %} 
+{% if image is defined %}
+concurrency:
+  group: ci-${{ "{{ github.ref }}" }}
+  cancel-in-progress: ${{ "{{ github.ref_type != 'tag' }}" }}
+{% endif %}
 defaults:
   run:
     shell: bash
@@ -19,22 +25,57 @@ jobs:
     name: Checks
     runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}{{ runner_os | default(value="ubuntu-24.04") }}{% endif %}
     timeout-minutes: {{ timeout_minutes | default(value=20) }}
-    steps:
+{% if postgres is defined %}{% set pg_db = postgres.db | default(value="app_test") %}{% set pg_user = postgres.user | default(value="app") %}{% set pg_password = postgres.password | default(value="ci-password") %}    services:
+      postgres:
+        image: {{ postgres.image | default(value="postgres:18-alpine") }}
+        env:
+          POSTGRES_DB: {{ pg_db }}
+          POSTGRES_USER: {{ pg_user }}
+          POSTGRES_PASSWORD: {{ pg_password }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U {{ pg_user }} -d {{ pg_db }}"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+{% endif %}{% if postgres is defined or env is defined %}    env:
+{% if postgres is defined %}      DATABASE_URL: postgresql://{{ pg_user }}:{{ pg_password }}@127.0.0.1:5432/{{ pg_db }}
+{% endif %}{% if env is defined %}{% for key, value in env %}      {{ key }}: {{ value }}
+{% endfor %}{% endif %}{% endif %}    steps:
       - name: Checkout sources
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Set up Bun
+{% if node_version is defined or package_manager == "npm" %}      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: {{ node_version | default(value="24") }}
+{% if package_manager == "npm" %}          cache: npm
+{% endif %}{% endif %}{% if package_manager == "bun" %}      - name: Set up Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: {{ bun_version | default(value="1.4.4") }}
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Format and lint with Biome
+{% endif %}{% if python_version is defined %}      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "{{ python_version }}"
+{% endif %}{% if opentofu_version is defined %}      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2
+        with:
+          tofu_version: {{ opentofu_version }}
+          tofu_wrapper: false
+{% endif %}{% if helm | default(value=false) %}      - name: Set up Helm
+        uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
+{% endif %}      - name: Install dependencies
+        run: {% if package_manager == "npm" %}npm ci{% else %}bun install --frozen-lockfile{% endif %}
+{% if browsers is defined %}      - name: Install Playwright browsers
+        run: {% if package_manager == "npm" %}npx{% else %}bunx{% endif %} playwright install --with-deps {{ browsers | join(sep=" ") }}
+{% endif %}{% if biome %}      - name: Format and lint with Biome
         uses: mongolyy/reviewdog-action-biome@75ddd5f0b3c303388bb6213aef110e0f5a4e1925 # v2.13.0
         with:
           reporter: github-check
           fail_on_error: true
           biome_flags: {{ formatter_flags | default(value=".") }}
-
+{% endif %}
 {% if lint_command | default(value="") != "" %}
       - name: Additional lint
         run: {{ lint_command }}
@@ -54,4 +95,149 @@ jobs:
 {% if build_command | default(value="") != "" %}
       - name: Build
         run: {{ build_command }}
+{% endif %}
+{% for step in steps | default(value=[]) %}
+      - name: {{ step.name }}
+        run: |
+          {{ step.run | indent(width=10) }}
+{% endfor %}
+{% if failure_artifacts is defined %}
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: failure-diagnostics
+          path: |
+            {{ failure_artifacts | join(sep="\n") | indent(width=12) }}
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+{% endif %}
+{% if image is defined %}{% set targets = image.targets | default(value=[{"target": "", "suffix": ""}]) %}
+  # Each platform builds natively; the merge job joins the per-platform digests.
+  build:
+    name: Build image (${{ "{{ matrix.platform }}" }}${{ "{{ matrix.image.target && format(', {0}', matrix.image.target) || '' }}" }})
+    needs: checks
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}${{ "{{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}" }}{% endif %}
+    timeout-minutes: {{ image.timeout_minutes | default(value=45) }}
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: {{ image.platforms | default(value=["linux/amd64", "linux/arm64"]) }}
+        image: {{ targets }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set image name
+        env:
+          IMAGE: ghcr.io/${{ "{{ github.repository }}" }}${{ "{{ matrix.image.suffix }}" }}
+          PLATFORM: ${{ "{{ matrix.platform }}" }}
+          TARGET: ${{ "{{ matrix.image.target || 'default' }}" }}
+        run: |
+          echo "IMAGE=${IMAGE,,}" >> "$GITHUB_ENV"
+          echo "DIGEST_KEY=${TARGET}-${PLATFORM//\//-}" >> "$GITHUB_ENV"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ "{{ github.actor }}" }}
+          password: ${{ "{{ secrets.GITHUB_TOKEN }}" }}
+      - name: Extract image labels
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ "{{ env.IMAGE }}" }}
+      - name: Build image
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: {{ image.context | default(value=".") }}
+          file: {{ image.dockerfile | default(value="Dockerfile") }}
+          target: ${{ "{{ matrix.image.target }}" }}
+          platforms: ${{ "{{ matrix.platform }}" }}
+          labels: ${{ "{{ steps.meta.outputs.labels }}" }}
+          outputs: type=image,name=${{ "{{ env.IMAGE }}" }},push-by-digest=true,name-canonical=true,push=${{ "{{ github.event_name != 'pull_request' }}" }}
+          cache-from: type=gha,scope=${{ "{{ env.DIGEST_KEY }}" }}
+          cache-to: type=gha,mode=max,scope=${{ "{{ env.DIGEST_KEY }}" }}
+      - name: Export image digest
+        if: github.event_name != 'pull_request'
+        env:
+          DIGEST: ${{ "{{ steps.build.outputs.digest }}" }}
+        run: |
+          mkdir -p /tmp/digests
+          touch "/tmp/digests/${DIGEST#sha256:}"
+      - name: Upload image digest
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: digests-${{ "{{ env.DIGEST_KEY }}" }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: Publish image${{ "{{ matrix.image.target && format(' ({0})', matrix.image.target) || '' }}" }}
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-24.04{% endif %}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: {{ targets }}
+    steps:
+      - name: Set image name
+        env:
+          IMAGE: ghcr.io/${{ "{{ github.repository }}" }}${{ "{{ matrix.image.suffix }}" }}
+        run: echo "IMAGE=${IMAGE,,}" >> "$GITHUB_ENV"
+      - name: Download image digests
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: /tmp/digests
+          pattern: digests-${{ "{{ matrix.image.target || 'default' }}" }}-*
+          merge-multiple: true
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ "{{ github.actor }}" }}
+          password: ${{ "{{ secrets.GITHUB_TOKEN }}" }}
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ "{{ env.IMAGE }}" }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=semver,pattern={{ "{{version}}" }}
+            type=semver,pattern={{ "{{major}}" }}.{{ "{{minor}}" }}
+            type=raw,value=latest,enable={{ "{{is_default_branch}}" }}
+      - name: Create multi-platform manifest
+        working-directory: /tmp/digests
+        env:
+          TAGS: ${{ "{{ steps.meta.outputs.tags }}" }}
+        run: |
+          tag_args=()
+          while IFS= read -r tag; do
+            tag_args+=(--tag "$tag")
+          done <<< "$TAGS"
+          sources=()
+          for digest in *; do
+            sources+=("$IMAGE@sha256:$digest")
+          done
+          docker buildx imagetools create "${tag_args[@]}" "${sources[@]}"
 {% endif %}

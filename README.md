@@ -57,8 +57,18 @@ named repositories: Orcastrate only changes repositories from the list, and the
 App installation controls the rest.
 
 Do not list repository names in this repository's files, commit messages, or
-pull requests. Template names under `templates/projects/` and fixtures still
-mention the projects they belong to.
+pull requests. Templates and fixtures are generic and use placeholder names; see
+[What belongs here](#what-belongs-here).
+
+## What belongs here
+
+Only generic, reusable templates belong in this repository. A template must be
+parameterized for any repository of its kind and must not encode one project's
+names, services, credentials, or infrastructure. Workflows that only make sense
+for a single project stay in that project's repository as ordinary,
+repository-owned workflows without Orcastrate frontmatter. When several
+repositories share a pattern, add parameters to the matching family template
+instead of copying a project's workflow here.
 
 ## Onboard a repository
 
@@ -122,14 +132,14 @@ Omit `custom_runner` to keep each job's default selection. Existing `runner_os`,
 `custom_runner` takes precedence over all of those settings, including matrix
 jobs. The runner must support each job's commands, operating system, and CPU
 architecture. For native multi-architecture builds, use an expression to select
-matching runners, for example in `projects/codetend/ci`:
+matching runners, for example with a `node/ci` image build:
 
 ```yaml
 #   custom_runner: "${{ contains(toJSON(matrix), 'linux/amd64') && 'ubicloud-standard-2' || 'ubicloud-standard-2-arm' }}"
 ```
 
-That expression also selects ARM for jobs without `matrix.platform`, matching
-CodeTend's default checks and merge architecture. For mixed Windows, macOS, and
+That expression also selects ARM for jobs without `matrix.platform`, such as
+the checks and manifest merge jobs. For mixed Windows, macOS, and
 Linux workflows, preserve platform-specific selection or provide an expression
 that maps each matrix entry to a compatible runner.
 
@@ -213,8 +223,8 @@ Formatting and clippy run once on `runner_os`, independently of the test matrix.
 `runner_os` defaults to `ubuntu-26.04`. For Windows-only crates, set both
 `test_os: [windows-latest]` and `runner_os: windows-latest`.
 
-Redguard uses the three-platform test matrix. `vscli` uses Ubuntu with coverage.
-CI renders and lints fixtures for the defaults and both consumer configurations.
+CI renders and lints fixtures for the defaults, a three-platform matrix, and
+coverage.
 
 ## Rust crate publishing
 
@@ -301,11 +311,39 @@ annotations and failing the check when diagnostics remain. The command
 parameters are optional so repositories can keep their existing test,
 verification, and build commands.
 
-FRND BOOK uses the project-specific `projects/frndbook/ci` template. It preserves
-Prettier formatting alongside Biome and Expo ESLint, then checks types, licenses,
-Expo compatibility, book tests, web journeys, Storybook canvases, phone previews,
-and Android/iOS bundles. `fixtures/frndbook-ci.yml` covers rendering and linting
-of this template. The repository is listed in the `ORCASTRATE_REPOS_FRNDBOOK_DEV` secret.
+Application repositories can extend the same template. Every parameter is
+optional, and the defaults render the original Bun and Biome workflow:
+
+| Parameter | Effect |
+| --- | --- |
+| `name` | Workflow name, default `Test & Build`. Keep it stable when `workflow_run` triggers depend on it. |
+| `package_manager` | `bun` (default) or `npm`. `npm` uses `npm ci` with the npm cache. |
+| `biome` | Set `false` when the repository's own commands run its formatter and linter. |
+| `node_version`, `bun_version`, `python_version`, `opentofu_version` | Install that tool version. |
+| `helm` | `true` installs Helm. |
+| `postgres` | Starts a PostgreSQL service and sets `DATABASE_URL`. Optional keys: `image`, `db`, `user`, `password`. |
+| `env` | Map of job environment variables. |
+| `browsers` | Playwright browsers to install with system dependencies. |
+| `steps` | List of `{name, run}` steps, run after the fixed command parameters. |
+| `failure_artifacts` | Paths uploaded when the job fails. |
+| `image` | Builds the Dockerfile on native amd64 and arm64 runners after checks pass and publishes a multi-platform manifest to `ghcr.io/<lowercase repository>` on pushes and `v*` tags. Optional keys: `platforms`, `context`, `dockerfile`, `timeout_minutes`, and `targets`, a list of `{target, suffix}` that publishes each Dockerfile target as `<image><suffix>`. |
+
+```yaml
+# @orcastrate
+# template: node/ci
+# params:
+#   name: Checks and Build
+#   biome: false
+#   postgres: {db: app_test, user: app, password: app}
+#   verify_command: bun run verify
+#   steps:
+#     - name: Check generated route tree
+#       run: git diff --exit-code -- src/routeTree.gen.ts
+#   image: {}
+# @end-orcastrate
+```
+
+The `node-*` fixtures cover the npm, application, and image configurations.
 
 ## Python CI
 
@@ -318,32 +356,18 @@ Python services with a committed `uv.lock`.
 The `docker/oci-publish` template builds and publishes a multi-platform image
 to GHCR on version tags or manual dispatch. It centralizes the Docker action
 versions, QEMU/Buildx setup, metadata, registry login, and GitHub Actions cache.
-Application checks and multi-job digest assembly remain repository-owned when
-they need more than this basic publish path.
-
-## Roastbook CI
-
-`projects/roastbook/ci` preserves the PostgreSQL integration suite, Docker and
-Helm validation, migration drift checks, browser asset boundaries, and
-multi-platform image build. The static demo has its own repository-owned workflow. Its fixture is
-`fixtures/roastbook-ci.yml`. Application checks remain project-specific.
-
-`projects/roastbook-infra/verify` runs the private infrastructure repository's
-credential-free verification command with pinned Bun, Node, and OpenTofu tools.
-Concrete infrastructure and deployment controllers remain private. Its fixture
-is `fixtures/roastbook-infra-verify.yml`.
-
-Both repositories use `common/actionlint` for workflow and shell validation and
-`common/pr-title` for Conventional Commit titles. The actionlint template ignores
-only its pinned release's outdated warning about the valid `ubuntu-26.04` runner.
+Use the `node/ci` `image` parameter to build images natively per architecture
+after checks pass.
 
 ## Secret synchronization
 
 The manual **Sync Actions secrets** workflow uses `vars.SECRET_SYNC_APP_ID`
 and `secrets.SECRET_SYNC_APP_PRIVATE_KEY`. Store the Releaser App credentials
 in `vars.RELEASER_APP_ID` and `secrets.RELEASER_APP_PRIVATE_KEY`. It defaults
-to a dry run and only targets the explicit repository and secret allowlists in
-`.github/workflows/sync-secrets.yml`.
+to a dry run and only targets the repositories in the `SECRET_SYNC_REPOS`
+repository secret (one `owner/name` per line) and the secret allowlist in
+`.github/workflows/sync-secrets.yml`. The repository list is a secret for the
+same reason as the [repository lists](#repository-lists).
 The App needs repository **Secrets: read and write** permission.
 
 ## Web application releases
@@ -356,8 +380,8 @@ git-cliff notes. It does not change package manifests or create version commits.
 The tag is the application release version.
 
 Each consumer owns `cliff.toml`, including its initial version and pre-1.0 bump
-policy. Roastbook starts at `v0.1.0`, bumps features to a minor release and
-breaking changes to a major release, including before 1.0. Explicit bump choices
+policy, for example starting at `v0.1.0` and bumping features to a minor release
+and breaking changes to a major release, including before 1.0. Explicit bump choices
 override commit inference and start from `v0.0.0` before the first tag. Automatic
 mode skips histories without unreleased changelog entries. Rerunning for an already tagged revision resumes an
 incomplete release or leaves the published release unchanged. Tags never move.
@@ -365,10 +389,9 @@ Run again after CI succeeds if preparation fails its CI gate.
 
 Configure `RELEASER_APP_ID` and `RELEASER_APP_PRIVATE_KEY`, with the Releaser App
 installed on the consumer and Contents write permission. Release publication
-uses the App token so downstream tag and release workflows run. The shared
-secret-sync allowlist includes both Roastbook repositories; the Secret Sync App
-also needs access to both. The Orcastrate App needs access before syncing their
-managed files.
+uses the App token so downstream tag and release workflows run. Add the consumer
+to `SECRET_SYNC_REPOS` and give the Secret Sync App access to distribute these
+credentials. The Orcastrate App needs access before syncing its managed files.
 
 `fixtures/common-release.yml` covers the default template. Version-selection
 behavior is tested with real temporary Git histories and git-cliff 2.14.2:
@@ -376,6 +399,3 @@ behavior is tested with real temporary Git histories and git-cliff 2.14.2:
 ```sh
 ORCASTRATE=/path/to/orcastrate GIT_CLIFF=/path/to/git-cliff python3 -m unittest discover -s tests
 ```
-
-Both Roastbook repositories consume this template, `common/actionlint`, and
-`common/pr-title`. The private deployment relay remains repository-owned.

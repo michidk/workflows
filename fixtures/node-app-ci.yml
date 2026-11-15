@@ -1,0 +1,24 @@
+# @orcastrate
+# template: node/ci
+# params:
+#   name: CI
+#   biome: false
+#   node_version: 24
+#   python_version: "3.11"
+#   opentofu_version: 1.13.2
+#   helm: true
+#   postgres: {image: "postgres:18-alpine", db: app_test, user: app, password: app}
+#   env:
+#     TEST_DATABASE: "1"
+#     DATA_DIR: ${{ github.workspace }}/data/test
+#   browsers: [chromium, firefox]
+#   verify_command: bun run verify
+#   steps:
+#     - name: Check generated route tree
+#       run: git diff --exit-code -- src/routeTree.gen.ts
+#     - name: Validate Docker Compose
+#       run: |
+#         APP_SECRET=ci-secret docker compose config --quiet
+#         docker compose -f docker-compose.auth.yaml config --quiet
+#   failure_artifacts: [playwright-report/, test-results/]
+# @end-orcastrate

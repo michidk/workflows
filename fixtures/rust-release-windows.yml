@@ -1,7 +1,7 @@
 # @orcastrate
 # template: rust/release
 # params:
-#   bin_name: displayz
+#   bin_name: example
 #   runner_os: windows-latest
 #   targets:
 #     - {os: windows-latest, target: x86_64-pc-windows-msvc}

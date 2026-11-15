@@ -1,7 +1,7 @@
 # @orcastrate
 # template: rust/release
 # params:
-#   bin_name: vscli
+#   bin_name: example
 #   publish_release: false
 #   targets:
 #     - {os: ubuntu-26.04, target: x86_64-unknown-linux-musl, cross: true}

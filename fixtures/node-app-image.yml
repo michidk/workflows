@@ -1,0 +1,12 @@
+# @orcastrate
+# template: node/ci
+# params:
+#   name: Checks and Build
+#   biome: false
+#   postgres: {}
+#   test_command: bun run test
+#   image:
+#     targets:
+#       - {target: app, suffix: ""}
+#       - {target: worker, suffix: -worker}
+# @end-orcastrate

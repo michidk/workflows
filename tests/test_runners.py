@@ -52,9 +52,8 @@ class RunnerTest(unittest.TestCase):
     def test_platform_defaults_are_preserved(self):
         expectations = {
             'rust-ci-matrix.yml': ['macos-latest', 'windows-latest', 'runs-on: ${{ matrix.os }}'],
-            'rust-release-vscli.yml': ['runs-on: ${{ matrix.os }}', 'os: windows-latest'],
-            'projects-codetend-ci.yml': ["matrix.platform == 'linux/amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm'"],
-            'projects-divetracx-ci.yml': ['runner: ubuntu-24.04-arm', 'runs-on: ${{ matrix.runner }}'],
+            'rust-release-cross.yml': ['runs-on: ${{ matrix.os }}', 'os: windows-latest'],
+            'node-app-image.yml': ["matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04'"],
         }
         for name, expected in expectations.items():
             with self.subTest(fixture=name):
