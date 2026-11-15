@@ -13,6 +13,9 @@ workflows and Renovate presets. Read `README.md` before changing it.
   that project's repository, without Orcastrate frontmatter. Do not bring it
   here, neither as a project template (no `templates/projects/`) nor as
   project-specific parameters, step lists, or options on a generic template.
+- Reusable workflows (`on: workflow_call`) in `.github/workflows/` follow the
+  same rule. Use them when a shared part must run inside a repository-owned
+  workflow, for example after its checks job.
 - Extract a template only when the workflow is genuinely shared. When unsure,
   keep it in the project repository.
 - Do not name projects or repositories in templates, fixtures, comments, commit

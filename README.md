@@ -326,6 +326,33 @@ versions, QEMU/Buildx setup, metadata, registry login, and GitHub Actions cache.
 Application checks and multi-job digest assembly stay in the application's own
 workflow when they need more than this basic publish path.
 
+## Container images
+
+`.github/workflows/container-image.yml` is a reusable workflow, not an
+Orcastrate template, so a repository keeps its own checks and adds the image
+build as one job that runs after them:
+
+```yaml
+jobs:
+  checks:
+    # repository-owned checks
+  image:
+    needs: checks
+    uses: michidk/workflows/.github/workflows/container-image.yml@<commit SHA> # main
+    permissions:
+      contents: read
+      packages: write
+```
+
+Each platform builds natively (`linux/amd64` on `amd64-runner`, `linux/arm64`
+on `arm64-runner`), avoiding QEMU emulation, and a publish job merges the
+digests into one manifest at `ghcr.io/<lowercase repository>`. Tags cover the
+branch, `sha-<short SHA>`, semver versions, and `latest` on the default branch.
+Pull requests build without pushing. Optional inputs: `image`, `platforms` and
+`targets` (JSON lists, where each target is `{"target": "<Dockerfile stage>",
+"suffix": "<image name suffix>"}`), `context`, `dockerfile`, the two runner
+labels, and `timeout-minutes`. Pin the commit SHA so Renovate updates it.
+
 ## Secret synchronization
 
 The manual **Sync Actions secrets** workflow uses `vars.SECRET_SYNC_APP_ID`

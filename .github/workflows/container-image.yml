@@ -1,0 +1,163 @@
+name: Container image
+
+# Reusable workflow: builds each platform on a native runner, then publishes one
+# multi-platform manifest per target to GHCR. Pull requests build without pushing.
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: Image name without registry; defaults to the lowercase repository name
+        type: string
+        default: ""
+      targets:
+        description: 'JSON list of {"target": Dockerfile stage, "suffix": image name suffix}'
+        type: string
+        default: '[{"target": "", "suffix": ""}]'
+      platforms:
+        description: JSON list of platforms
+        type: string
+        default: '["linux/amd64", "linux/arm64"]'
+      context:
+        type: string
+        default: .
+      dockerfile:
+        type: string
+        default: Dockerfile
+      amd64-runner:
+        type: string
+        default: ubuntu-24.04
+      arm64-runner:
+        type: string
+        default: ubuntu-24.04-arm
+      timeout-minutes:
+        type: number
+        default: 45
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  PUSH: ${{ github.event_name != 'pull_request' }}
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }}${{ matrix.image.target && format(', {0}', matrix.image.target) || '' }})
+    runs-on: ${{ matrix.platform == 'linux/arm64' && inputs.arm64-runner || inputs.amd64-runner }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(inputs.platforms) }}
+        image: ${{ fromJSON(inputs.targets) }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set image name
+        env:
+          IMAGE: ghcr.io/${{ inputs.image || github.repository }}${{ matrix.image.suffix }}
+          PLATFORM: ${{ matrix.platform }}
+          TARGET: ${{ matrix.image.target || 'default' }}
+        run: |
+          echo "IMAGE=${IMAGE,,}" >> "$GITHUB_ENV"
+          echo "DIGEST_KEY=${TARGET}-${PLATFORM//\//-}" >> "$GITHUB_ENV"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Log in to GitHub Container Registry
+        if: env.PUSH == 'true'
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract image labels
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.IMAGE }}
+      - name: Build image
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          target: ${{ matrix.image.target }}
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=${{ env.PUSH }}
+          cache-from: type=gha,scope=${{ env.DIGEST_KEY }}
+          cache-to: type=gha,mode=max,scope=${{ env.DIGEST_KEY }}
+      - name: Export image digest
+        if: env.PUSH == 'true'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p /tmp/digests
+          touch "/tmp/digests/${DIGEST#sha256:}"
+      - name: Upload image digest
+        if: env.PUSH == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: digests-${{ env.DIGEST_KEY }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Publish${{ matrix.image.target && format(' ({0})', matrix.image.target) || '' }}
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ${{ inputs.amd64-runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(inputs.targets) }}
+    steps:
+      - name: Set image name
+        env:
+          IMAGE: ghcr.io/${{ inputs.image || github.repository }}${{ matrix.image.suffix }}
+        run: echo "IMAGE=${IMAGE,,}" >> "$GITHUB_ENV"
+      - name: Download image digests
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: /tmp/digests
+          pattern: digests-${{ matrix.image.target || 'default' }}-*
+          merge-multiple: true
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Create multi-platform manifest
+        working-directory: /tmp/digests
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          tag_args=()
+          while IFS= read -r tag; do
+            tag_args+=(--tag "$tag")
+          done <<< "$TAGS"
+          sources=()
+          for digest in *; do
+            sources+=("$IMAGE@sha256:$digest")
+          done
+          docker buildx imagetools create "${tag_args[@]}" "${sources[@]}"
+          docker buildx imagetools inspect "$IMAGE:$VERSION"
