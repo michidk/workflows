@@ -1,8 +1,8 @@
 # @orcastrate
 # template: rust/release
 # params:
-#   bin_name: bitmap2ttf
-#   manifest_paths: [bitmap2ttf/Cargo.toml, bitmap2ttf-cli/Cargo.toml]
+#   bin_name: example
+#   manifest_paths: [example/Cargo.toml, example-cli/Cargo.toml]
 #   publish_release: true
 #   targets:
 #     - {os: ubuntu-26.04, target: x86_64-unknown-linux-gnu}
