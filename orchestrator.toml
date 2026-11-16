@@ -2,3 +2,4 @@
 templates_dir = "templates"
 branch_prefix = "orcastrate/sync"
 pr_label = "orcastrate"
+extra_files = ["cliff.toml"]

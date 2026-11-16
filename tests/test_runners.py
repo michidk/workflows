@@ -25,9 +25,10 @@ class RunnerTest(unittest.TestCase):
 
     def test_every_template_has_a_fixture(self):
         covered = {re.search(r'^# template: (.+)$', p.read_text(), re.M)[1]
-                   for p in (ROOT / 'fixtures').glob('*.yml')}
+                   for p in (ROOT / 'fixtures').glob('*.*')}
         templates = {p.relative_to(ROOT / 'templates').with_suffix('').as_posix()
-                     for p in (ROOT / 'templates').rglob('*.yml')}
+                     for suffix in ('*.yml', '*.toml')
+                     for p in (ROOT / 'templates').rglob(suffix)}
         self.assertFalse(templates - covered)
 
     def test_runner_defaults_and_overrides(self):

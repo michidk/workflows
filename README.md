@@ -19,7 +19,8 @@ Template changes do not modify target repositories directly.
 
 - `orchestrator.toml` holds the Orcastrate settings. The managed repositories are not listed
   in this public repository; see [Repository lists](#repository-lists).
-- `templates/` contains the canonical Tera workflow templates and Renovate preset.
+- `templates/` contains the canonical Tera workflow templates, the Renovate preset,
+  and the git-cliff configuration.
 - `.github/workflows/sync.yml` runs Orcastrate.
 
 The templates are grouped by workflow family:
@@ -31,7 +32,7 @@ templates/
   node/     # Node.js and Bun checks
   python/   # Python projects using uv
   rust/     # Rust CI, release, publishing, and version bump workflows
-  presets/  # reusable configuration files, such as Renovate
+  presets/  # reusable configuration files, such as Renovate and git-cliff
 ```
 
 - `.github/workflows/actionlint.yml` validates this repository.
@@ -199,6 +200,22 @@ Applications keep the shared preset, which pins development dependencies.
 For a fork you maintain, also set `"forkProcessing": "enabled"` in that
 repository's `.github/renovate.json5`. Renovate otherwise skips forks when the App has
 access to all repositories.
+
+## Release notes
+
+`templates/presets/cliff.toml` is the git-cliff configuration the release
+workflows use for release notes and automatic version bumps. Orcastrate manages
+a repository's `cliff.toml` (listed in `extra_files`) once the file starts with:
+
+```toml
+# @orcastrate
+# template: presets/cliff
+# @end-orcastrate
+```
+
+It groups conventional commits by type, skips `chore` commits, and only treats
+stable `vX.Y.Z` tags as releases, so floating major tags are ignored. Set the
+optional `initial_tag` parameter for a repository without release tags.
 
 ## Rust CI
 
