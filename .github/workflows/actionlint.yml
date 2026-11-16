@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: michidk/orcastrate
-          ref: 33bf30bfac60bb0abbc5f50921def1954f3f51cc # renovate: datasource=git-refs depName=https://github.com/michidk/orcastrate currentValue=main
+          ref: 230417d08da91f4c196e95e65d1ec82e5b08975b # renovate: datasource=git-refs depName=https://github.com/michidk/orcastrate currentValue=main
           path: orcastrate-source
 
       - name: Build pinned Orcastrate
@@ -32,7 +32,7 @@ jobs:
           { cat orchestrator.toml; printf '\n[[repos]]\nname = "example/example"\n'; } > validate.toml
           docker run --rm -v "$GITHUB_WORKSPACE:/workspace" -w /workspace orcastrate-validate --config validate.toml validate
           mkdir -p rendered
-          for fixture in fixtures/*.yml; do
+          for fixture in fixtures/*.yml fixtures/*.toml; do
             docker run --rm -v "$GITHUB_WORKSPACE:/workspace" -w /workspace \
               orcastrate-validate --config validate.toml render "$fixture" > "rendered/$(basename "$fixture")"
           done
