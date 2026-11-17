@@ -278,7 +278,7 @@ default branch and choose an automatic, patch, minor, or major bump, defaulting
 to automatic. The automatic option uses git-cliff and Conventional Commit messages
 to choose the bump. The workflow calculates the next `X.Y.Z` version, updates
 the package version, preserves locked dependency versions, and pushes the commit
-and tag atomically. If git-cliff finds no unreleased changes, the workflow is a
+through GitHub's signing API before creating the tag. If git-cliff finds no unreleased changes, the workflow is a
 no-op. An existing next-version tag at another commit causes it to fail.
 
 Both release templates accept `manifest_paths`, defaulting to `[Cargo.toml]`.
@@ -286,6 +286,13 @@ List all packages that share the release version. The bump updates their
 versions and local dependency requirements together, then commits the changed
 Cargo manifests and lockfile. The release checks each selected package's
 version against the tag.
+
+Version commits use the release App's GraphQL `createCommitOnBranch` API with
+the checked-out branch head as `expectedHeadOid`. The workflow verifies GitHub's
+signature before creating the tag. Optional `co_authors` entries in the bump
+workflow frontmatter become deduplicated `Co-authored-by` trailers; the App
+remains the author and committer. A branch conflict or failed signature check
+stops tagging. Commit publication and tag creation are separate API operations.
 
 The `rust/release` template verifies the tag and Cargo version, runs formatting,
 clippy, and tests, and builds every configured target before creating a release.
@@ -295,6 +302,22 @@ Archives retain their existing names and include a `SHA256SUMS` file.
 Configure its frontmatter with `bin_name` and a `targets` list. Each target needs
 `os` and `target`; use `cross: true` for Linux cross compilation and `lib_file`
 to include a separate native-library archive.
+
+For projects with their own multi-job verification and packaging, set
+`build_workflow: ./.github/workflows/build-release.yml` instead of `bin_name`
+and `targets`. The repository-owned reusable workflow accepts a required string
+input `tag`, checks out that tag, runs all project checks and uploads flat release
+archives in artifacts named `release-*`. It must not create tags or releases.
+Orcastrate continues to own tag validation, Cargo version verification, artifact
+download, checksums, release notes and publication. No project commands or
+platform configuration belong in this shared template.
+
+The release workflow accepts an optional `tag` input for retries from the default
+branch. Without it, a tag push or manual run on a tag uses that tag. All checkouts
+use the selected tag, and attempts for the same tag share a concurrency group.
+The final `Release complete` check rejects failed, cancelled or skipped dependencies.
+Deployment belongs in a repository-owned `release: published` workflow and can
+be retried independently of building or publishing the release.
 
 For a Rust library without a CLI, set `library_only: true` instead of `bin_name`
 and `targets`. The release still verifies the package and generates a git-cliff

@@ -5,12 +5,17 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing stable release tag; omit when running on a tag
+        type: string
+        required: false
 
 permissions:
   contents: read
 
 concurrency:
-  group: release-${{ "{{ github.repository }}" }}-${{ "{{ github.ref }}" }}
+  group: release-${{ "{{ github.repository }}" }}-${{ "{{ inputs.tag || github.ref_name }}" }}
   cancel-in-progress: false
 
 defaults:
@@ -18,10 +23,10 @@ defaults:
     shell: bash
 
 env:
-{% if not library_only %}
+{% if not library_only and build_workflow is not defined %}
   BIN_NAME: {{ bin_name }}
 {% endif %}
-  TAG_NAME: ${{ "{{ github.ref_name }}" }}
+  TAG_NAME: ${{ "{{ inputs.tag || github.ref_name }}" }}
   PUBLISH_RELEASE: "{{ publish_release | default(value=false) }}"
 
 jobs:
@@ -32,7 +37,7 @@ jobs:
     steps:
       - name: Validate release tag and publishing token
         run: |
-          if [[ "$GITHUB_REF_TYPE" != "tag" || ! "$TAG_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+          if [[ ! "$TAG_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
             echo '::error::Select a stable vX.Y.Z release tag.'
             exit 1
           fi
@@ -40,6 +45,7 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: refs/tags/${{ "{{ env.TAG_NAME }}" }}
           persist-credentials: false
 
       - name: Install toolchain
@@ -62,13 +68,22 @@ jobs:
           fi
 {% endfor %}
 
+{% if build_workflow is not defined %}
       - name: Format, lint, and test
         run: |
           cargo fmt --all -- --check
           cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
           cargo test --locked --workspace --all-features
 
-{% if not library_only %}
+{% endif %}
+{% if build_workflow is defined %}
+  build:
+    name: Build and verify release artifacts
+    needs: verify
+    uses: {{ build_workflow }}
+    with:
+      tag: ${{ "{{ inputs.tag || github.ref_name }}" }}
+{% elif not library_only %}
   build:
     name: Build (${{ "{{ matrix.target }}" }})
     needs: verify
@@ -95,6 +110,7 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: refs/tags/${{ "{{ env.TAG_NAME }}" }}
           persist-credentials: false
 
       - name: Install toolchain
@@ -153,7 +169,7 @@ jobs:
 {% endif %}
   release:
     name: Create GitHub release
-    needs: {% if library_only %}verify{% else %}build{% endif %}
+    needs: {% if library_only and build_workflow is not defined %}verify{% else %}build{% endif %}
     runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-26.04{% endif %}
     timeout-minutes: 10
     permissions:
@@ -174,6 +190,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+          ref: refs/tags/${{ "{{ env.TAG_NAME }}" }}
           persist-credentials: false
 
       - name: Generate release changelog
@@ -182,7 +199,7 @@ jobs:
           config: cliff.toml
           args: --current --strip header --output CHANGELOG.md
 
-{% if not library_only %}
+{% if not library_only or build_workflow is defined %}
       - name: Download build artifacts
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
@@ -207,14 +224,31 @@ jobs:
             exit 0
           fi
           if [[ "$release_state" == "true" ]]; then
-{% if not library_only %}
+{% if not library_only or build_workflow is defined %}
             gh release upload "$TAG_NAME" artifacts/* --clobber
 {% endif %}
             gh release edit "$TAG_NAME" --notes-file CHANGELOG.md
           else
-            gh release create "$TAG_NAME"{% if not library_only %} artifacts/*{% endif %} --verify-tag --draft \
+            gh release create "$TAG_NAME"{% if not library_only or build_workflow is defined %} artifacts/*{% endif %} --verify-tag --draft \
               --title "${TAG_NAME#v}" --notes-file CHANGELOG.md
           fi
           if [[ "$PUBLISH_RELEASE" == "true" ]]; then
             gh release edit "$TAG_NAME" --draft=false
+          fi
+
+  completion:
+    name: Release complete
+    if: always()
+    needs: [verify, {% if not library_only or build_workflow is defined %}build, {% endif %}release]
+    runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-26.04{% endif %}
+    timeout-minutes: 5
+    env:
+      RESULTS: ${{ "{{ toJSON(needs) }}" }}
+    steps:
+      - name: Require every release job to succeed
+        run: |
+          printf '%s\n' "$RESULTS" | jq -r 'to_entries[] | "\(.key): \(.value.result)"' | tee -a "$GITHUB_STEP_SUMMARY"
+          if ! jq -e 'all(.[]; .result == "success")' <<< "$RESULTS" > /dev/null; then
+            echo '::error::Release incomplete. Verification, builds and publication must succeed.'
+            exit 1
           fi

@@ -1,0 +1,7 @@
+# @orcastrate
+# template: rust/release
+# params:
+#   manifest_paths: [example/Cargo.toml]
+#   build_workflow: ./.github/workflows/build-release.yml
+#   publish_release: true
+# @end-orcastrate
