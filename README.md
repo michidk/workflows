@@ -4,6 +4,10 @@ This repository is the central [Orcastrate](https://github.com/michidk/orcastrat
 template repository for GitHub Actions workflows and Renovate configuration
 used by michidk repositories.
 
+[Updates](#how-updates-reach-repositories) · [Onboarding](#onboard-a-repository) ·
+[Runners](#runner-selection) · [Renovate](#renovate) · [Rust releases](#rust-releases) ·
+[Web releases](#web-application-releases) · [Container images](#container-images)
+
 ## How updates reach repositories
 
 1. Change a template in `templates/` and merge the change into `main`.
@@ -22,6 +26,7 @@ Template changes do not modify target repositories directly.
 - `templates/` contains the canonical Tera workflow templates, the Renovate preset,
   and the git-cliff configuration.
 - `.github/workflows/sync.yml` runs Orcastrate.
+- `.github/workflows/actionlint.yml` validates this repository.
 
 The templates are grouped by workflow family:
 
@@ -30,12 +35,11 @@ templates/
   common/   # workflows shared by any repository
   docker/   # OCI image build and publication
   node/     # Node.js and Bun checks
+  npm/      # npm package publication
   python/   # Python projects using uv
   rust/     # Rust CI, release, publishing, and version bump workflows
   presets/  # reusable configuration files, such as Renovate and git-cliff
 ```
-
-- `.github/workflows/actionlint.yml` validates this repository.
 
 ## Repository lists
 
@@ -278,8 +282,8 @@ default branch and choose an automatic, patch, minor, or major bump, defaulting
 to automatic. The automatic option uses git-cliff and Conventional Commit messages
 to choose the bump. The workflow calculates the next `X.Y.Z` version, updates
 the package version, preserves locked dependency versions, and pushes the commit
-through GitHub's signing API before creating the tag. If git-cliff finds no unreleased changes, the workflow is a
-no-op. An existing next-version tag at another commit causes it to fail.
+through GitHub's signing API before creating the tag. If git-cliff finds no
+unreleased changes, the workflow is a no-op. An existing next-version tag at another commit causes it to fail.
 
 Both release templates accept `manifest_paths`, defaulting to `[Cargo.toml]`.
 List all packages that share the release version. The bump updates their
@@ -417,8 +421,8 @@ Each consumer owns `cliff.toml`, including its initial version and pre-1.0 bump
 policy, for example starting at `v0.1.0` and bumping features to a minor release
 and breaking changes to a major release, including before 1.0. Explicit bump choices
 override commit inference and start from `v0.0.0` before the first tag. Automatic
-mode skips histories without unreleased changelog entries. Rerunning for an already tagged revision resumes an
-incomplete release or leaves the published release unchanged. Tags never move.
+mode skips histories without unreleased changelog entries. Rerunning for an
+already tagged revision resumes an incomplete release or leaves the published release unchanged. Tags never move.
 Run again after CI succeeds if preparation fails its CI gate.
 
 Configure `RELEASER_APP_ID` and `RELEASER_APP_PRIVATE_KEY`, with the Releaser App
