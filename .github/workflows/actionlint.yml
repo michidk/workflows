@@ -50,9 +50,11 @@ jobs:
 
       - name: Run actionlint
         # GitHub supports concurrency.queue; actionlint 1.7.12 has not added it yet.
+        # build-release.yml is the consumer repository's own workflow, absent from fixtures.
         run: >-
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           -ignore 'label "ubuntu-26\.04" is unknown'
           -ignore 'label "ubicloud-[a-z0-9-]+" is unknown'
           -ignore '^unexpected key "queue" for "concurrency" section\.'
+          -ignore 'could not read reusable workflow file for "\./\.github/workflows/build-release\.yml"'
           .github/workflows/*.yml rendered/*.yml
