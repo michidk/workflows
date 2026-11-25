@@ -48,7 +48,11 @@ jobs:
           fi
           {
             cat orchestrator.toml
-            while read -r repo; do printf '\n[[repos]]\nname = "%s"\n' "$repo"; done <<< "$repos"
+            while read -r repo; do
+              # A repository with its own orchestrator.toml runs Orcastrate itself.
+              if gh api "repos/$repo/contents/orchestrator.toml" --silent 2>/dev/null; then continue; fi
+              printf '\n[[repos]]\nname = "%s"\n' "$repo"
+            done <<< "$repos"
           } > .orcastrate.toml
 
       - name: Run Orcastrate

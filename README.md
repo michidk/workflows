@@ -50,7 +50,8 @@ maintain: the managed repositories are the ones each App is installed on.
 - `sync.yml` runs once per owner (`michidk`, `frndbook-dev`). It asks the
   Orcastrate App installation for its repositories, skips archived ones, and
   appends a `[[repos]]` table for each to `orchestrator.toml` at run time.
-  Repositories without Orcastrate frontmatter are left unchanged.
+  Repositories without Orcastrate frontmatter are left unchanged, and ones with
+  their own `orchestrator.toml` are skipped because they run Orcastrate themselves.
 - `sync-secrets.yml` targets the repositories the Secret Sync App is installed
   on whose workflows mention `RELEASER_APP_`.
 
