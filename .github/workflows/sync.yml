@@ -40,7 +40,7 @@ jobs:
           OWNER: ${{ matrix.owner }}
         run: |
           set -euo pipefail
-          repos="$(scripts/installation-repos.sh)"
+          repos="$(bash scripts/installation-repos.sh)"
           if [[ -z "$repos" ]]; then
             echo "::error::The Orcastrate App can access no repositories of $OWNER."
             exit 1
