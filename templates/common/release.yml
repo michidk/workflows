@@ -33,6 +33,11 @@ jobs:
     runs-on: {% if custom_runner is defined %}{{ custom_runner }}{% else %}ubuntu-26.04{% endif %}
     timeout-minutes: 10
     steps:
+      - name: Install release tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends gh jq
+
       - name: Require default branch and successful source CI
         env:
           GH_TOKEN: ${{ "{{ github.token }}" }}
