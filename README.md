@@ -54,7 +54,7 @@ maintain: the managed repositories are the ones each App is installed on.
 - `sync-secrets.yml` targets the repositories the Secret Sync App is installed
   on whose workflows mention `RELEASER_APP_`.
 
-`scripts/installation-repos.sh` lists an installation's repositories and masks
+`scripts/installation-repos.sh` writes an installation's repositories to a file and masks
 every name in the logs. Onboarding another owner means installing the Apps there
 and adding the owner to the `sync.yml` matrix.
 
