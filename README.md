@@ -44,22 +44,19 @@ templates/
 ## Repository lists
 
 This repository and its Actions logs are public, while some managed repositories
-are private, so repository names are kept out of the code. Each owner has a
-repository secret holding its `[[repos]]` tables, in the same format as
-Orcastrate's `orchestrator.toml`:
+are private, so repository names are kept out of the code. There is no list to
+maintain: the managed repositories are the ones each App is installed on.
 
-| Secret                          | Owner          |
-| ------------------------------- | -------------- |
-| `ORCASTRATE_REPOS`              | `michidk`      |
-| `ORCASTRATE_REPOS_FRNDBOOK_DEV` | `frndbook-dev` |
+- `sync.yml` runs once per owner (`michidk`, `frndbook-dev`). It asks the
+  Orcastrate App installation for its repositories, skips archived ones, and
+  appends a `[[repos]]` table for each to `orchestrator.toml` at run time.
+  Repositories without Orcastrate frontmatter are left unchanged.
+- `sync-secrets.yml` targets the repositories the Secret Sync App is installed
+  on whose workflows mention `RELEASER_APP_`.
 
-`sync.yml` appends each secret to `orchestrator.toml` at run time and masks every
-repository name in the logs. A secret is used instead of a variable because
-variables are not masked. An App token covers one installation, so each owner has
-its own token and Orcastrate step; onboarding another owner means installing the
-App there, adding a secret, and adding both steps. The tokens are not limited to
-named repositories: Orcastrate only changes repositories from the list, and the
-App installation controls the rest.
+`scripts/installation-repos.sh` lists an installation's repositories and masks
+every name in the logs. Onboarding another owner means installing the Apps there
+and adding the owner to the `sync.yml` matrix.
 
 Do not list repository names in this repository's files, commit messages, or
 pull requests. Templates and fixtures are generic and use placeholder names; see
@@ -81,13 +78,8 @@ same workflow is genuinely shared.
 1. Open the `michidk-orcastrate` GitHub App installation and add the new
    repository. Grant the App read and write access to **Contents**, **Pull
    requests**, and **Workflows**.
-2. Add the repository to the matching repository-list secret (see
-   [Repository lists](#repository-lists)):
-
-   ```toml
-   [[repos]]
-   name = "michidk/example"
-   ```
+2. If the repository releases with the Releaser App, add it to the Secret Sync
+   App installation as well (see [Repository lists](#repository-lists)).
 
 3. Add the initial managed workflow under `.github/workflows/` in the target
    repository. Copy an existing workflow that uses the required template and
@@ -161,7 +153,7 @@ self-hosted-runner:
 
 The sync workflow authenticates with the `michidk-orcastrate` GitHub App. Its
 App ID is the repository variable `ORCASTRATE_APP_ID`. The token action
-discovers the installation using `owner: michidk`; installation ID variables
+discovers each installation from the matrix `owner`; installation ID variables
 are not required. Store the downloaded PEM
 key as the `ORCASTRATE_PRIVATE_KEY` repository secret in `michidk/workflows`.
 
@@ -402,11 +394,11 @@ labels, and `timeout-minutes`. Pin the commit SHA so Renovate updates it.
 The manual **Sync Actions secrets** workflow uses `vars.SECRET_SYNC_APP_ID`
 and `secrets.SECRET_SYNC_APP_PRIVATE_KEY`. Store the Releaser App credentials
 in `vars.RELEASER_APP_ID` and `secrets.RELEASER_APP_PRIVATE_KEY`. It defaults
-to a dry run and only targets the repositories in the `SECRET_SYNC_REPOS`
-repository secret (one `owner/name` per line) and the secret allowlist in
-`.github/workflows/sync-secrets.yml`. The repository list is a secret for the
-same reason as the [repository lists](#repository-lists).
-The App needs repository **Secrets: read and write** permission.
+to a dry run, only writes the secrets in the allowlist in
+`.github/workflows/sync-secrets.yml`, and only targets repositories selected as
+described in [Repository lists](#repository-lists). It reads their workflow files
+with the Orcastrate App token. The Secret Sync App needs repository **Secrets:
+read and write** permission.
 
 ## Web application releases
 
@@ -427,8 +419,7 @@ Run again after CI succeeds if preparation fails its CI gate.
 
 Configure `RELEASER_APP_ID` and `RELEASER_APP_PRIVATE_KEY`, with the Releaser App
 installed on the consumer and Contents write permission. Release publication
-uses the App token so downstream tag and release workflows run. Add the consumer
-to `SECRET_SYNC_REPOS` and give the Secret Sync App access to distribute these
+uses the App token so downstream tag and release workflows run. Give the Secret Sync App access to the consumer to distribute these
 credentials. The Orcastrate App needs access before syncing its managed files.
 
 `fixtures/common-release.yml` covers the default template. Version-selection

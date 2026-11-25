@@ -20,8 +20,8 @@ workflows and Renovate presets. Read `README.md` before changing it.
   keep it in the project repository.
 - Do not name projects or repositories in templates, fixtures, comments, commit
   messages, or branch names. Fixtures use placeholders such as `example`.
-  Repository lists live in repository secrets (`ORCASTRATE_REPOS*`,
-  `SECRET_SYNC_REPOS`).
+  The managed repositories are the Apps' installations, listed and masked at run
+  time by `scripts/installation-repos.sh`; never write them down.
 
 ## Validation
 
